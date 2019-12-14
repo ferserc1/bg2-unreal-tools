@@ -1,0 +1,18 @@
+{
+    "FileVersion" : 3,
+    "FriendlyName" : "Bg2 Unreal integration tools",
+    "Version" : 1,
+    "VersionName": "1.0",
+    "Description" : "Load bg2 files and scenes at runtime into your Unreal application.",
+    "Category" : "Bg2.Unreal Tools",
+    "CreatedBy" : "Fernando Serrano Carpena",
+    "CreatedByURL" : "https://www.bg2engine.org",
+
+    "Modules" :
+    [
+        {
+            "Name" : "Bg2UnrealTools",
+            "Type" : "Runtime"
+        }
+    ]
+}
