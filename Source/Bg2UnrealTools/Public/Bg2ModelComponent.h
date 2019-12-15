@@ -28,6 +28,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UProceduralMeshComponent * ModelMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BG2 Engine")
+	float Scale = 100.0f;
+
 	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
 	void LoadModel(FString modelPath);
 

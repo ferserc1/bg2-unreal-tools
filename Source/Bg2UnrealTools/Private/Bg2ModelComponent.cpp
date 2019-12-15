@@ -108,16 +108,17 @@ bool UBg2ModelComponent::LoadModelMesh()
 	.MaterialName([&](const std::string & matName) {
 		currentMatName = matName.c_str();
 	})
-	.Vertex([&](const std::vector<float> & v) {
+	.Vertex([&](const std::vector<float> & v) {		
 		for (size_t i = 0; i < v.size(); i += 3)
 		{
-			vertices.Add(FVector(v[i] * 100.0f, v[i + 1] * 100.0f, v[i + 2] * 100.0f));
+			FVector vector(v[i] * Scale, v[i + 1] * Scale, v[i + 2] * Scale);
+			vertices.Add(vector.RotateAngleAxis(90.0f, { 1.0f, 0.0f, 0.0f }));
 		}
 	})
 	.Normal([&](const std::vector<float> & n) {
 		for (size_t i = 0; i < n.size(); i += 3)
 		{
-			normals.Add(FVector(n[i], n[i + 1], n[i + 2]));
+			normals.Add(FVector(n[i], n[i + 1], n[i + 2]).RotateAngleAxis(90.0f, { 1.0f, 0.0f, 0.0f }));
 		}
 	})
 	.Uv0([&](const std::vector<float> & t) {

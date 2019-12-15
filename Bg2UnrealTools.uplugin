@@ -14,5 +14,13 @@
             "Name" : "Bg2UnrealTools",
             "Type" : "Runtime"
         }
+    ],
+
+    "Plugins" :
+    [
+        {
+            "name" : "ProceduralMeshComponent",
+            "enabled" : true
+        }
     ]
 }
