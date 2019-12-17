@@ -9,6 +9,9 @@
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
 #include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
 
+#include "EngineMinimal.h"
+#include "JsonUtilities.h"
+
 // Sets default values for this component's properties
 UBg2ModelComponent::UBg2ModelComponent()
 {
@@ -100,7 +103,7 @@ bool UBg2ModelComponent::LoadModelMesh()
 
 	})
 	.Materials([&](const std::string & matData) {
-		// TODO: Load materials
+		LoadMaterials(matData);
 	})
 	.PlistName([&](const std::string & plistName) {
 		currentPlistName = plistName.c_str();
@@ -166,4 +169,34 @@ bool UBg2ModelComponent::LoadModelMesh()
 		// Error
 		return false;
 	}
+}
+
+void UBg2ModelComponent::LoadMaterials(const std::string & materialData)
+{
+	FString JsonString = "{\"Materials\":";
+	JsonString += FString(materialData.c_str());
+	JsonString += "}";
+	
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
+
+	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
+	{
+		GLog->Log("Material json parsed OK");
+		TArray<TSharedPtr<FJsonValue>> Materials = JsonObject->GetArrayField("Materials");
+		for (int32 matIndex = 0; matIndex < Materials.Num(); ++matIndex)
+		{
+			LoadMaterial(Materials[matIndex]->AsObject());
+		}
+	}
+}
+
+void UBg2ModelComponent::LoadMaterial(const TSharedPtr<FJsonObject> & materialData)
+{
+	FString name = materialData->GetStringField("name");
+	FString type = materialData->GetStringField("class");
+
+	GLog->Log("Material name: " + name);
+	GLog->Log("Material class: " + type);
+	// TODO: read material
 }

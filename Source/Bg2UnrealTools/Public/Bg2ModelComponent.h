@@ -5,6 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "ProceduralMeshComponent.h"
+
+#include <string>
+#include "JsonUtilities.h"
+
 #include "Bg2ModelComponent.generated.h"
 
 
@@ -42,4 +46,6 @@ private:
 	bool mModelPathChanged = false;
 
 	bool LoadModelMesh();
+	void LoadMaterials(const std::string & materialData);
+	void LoadMaterial(const TSharedPtr<FJsonObject> & materialData);
 };
