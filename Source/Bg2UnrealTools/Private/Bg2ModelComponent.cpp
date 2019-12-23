@@ -4,6 +4,7 @@
 #include "Bg2ModelComponent.h"
 
 #include "Bg2Reader.h"
+#include "ImageLoader.h"
 
 
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
@@ -11,6 +12,8 @@
 
 #include "EngineMinimal.h"
 #include "JsonUtilities.h"
+#include "ConstructorHelpers.h"
+#include "Misc/Paths.h"
 
 // Sets default values for this component's properties
 UBg2ModelComponent::UBg2ModelComponent()
@@ -21,6 +24,16 @@ UBg2ModelComponent::UBg2ModelComponent()
 
 	ModelMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("GeneratedMesh"));
 	ModelMesh->bUseAsyncCooking = true; // multi-threaded PhysX cooking
+
+	ConstructorHelpers::FObjectFinder<UMaterial> MaterialFinder(TEXT("/Bg2UnrealTools/Materials/TestMaterial"));
+	if (MaterialFinder.Succeeded())
+	{
+		mBaseMaterial = MaterialFinder.Object;
+	}
+	else
+	{
+		mBaseMaterial = CreateDefaultSubobject<UMaterial>(TEXT("InvalidBaseMaterial"));
+	}
 }
 
 
@@ -97,13 +110,14 @@ bool UBg2ModelComponent::LoadModelMesh()
 
 	FString currentPlistName;
 	FString currentMatName;
-	int currentMeshIndex = 0;
+	int32 currentMeshIndex = 0;
+	std::string materialData;
 
 	reader.Version([&](uint8_t, uint8_t, uint8_t) {
 
 	})
 	.Materials([&](const std::string & matData) {
-		LoadMaterials(matData);
+		materialData = matData;
 	})
 	.PlistName([&](const std::string & plistName) {
 		currentPlistName = plistName.c_str();
@@ -144,7 +158,9 @@ bool UBg2ModelComponent::LoadModelMesh()
 			Triangles.Add(static_cast<int32>(i + 1));
 			Triangles.Add(static_cast<int32>(i));
 		}
-		ModelMesh->CreateMeshSection_LinearColor(currentMeshIndex++, vertices, Triangles, normals, UV0, TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
+		mMaterialIndexes[currentMatName] = currentMeshIndex;
+		ModelMesh->CreateMeshSection_LinearColor(currentMeshIndex, vertices, Triangles, normals, UV0, TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
+		++currentMeshIndex;
 		vertices.Empty();
 		normals.Empty();
 		UV0.Empty();
@@ -160,6 +176,7 @@ bool UBg2ModelComponent::LoadModelMesh()
 	ModelMesh = NewObject<UProceduralMeshComponent>(this, UProceduralMeshComponent::StaticClass(), TEXT("BG2E mesh"));
 	if (reader.Load(TCHAR_TO_UTF8(*mModelPath)))
 	{
+		LoadMaterials(materialData);
 		ModelMesh->SetupAttachment(GetOwner()->GetRootComponent());
 		ModelMesh->RegisterComponent();
 		return true;
@@ -196,7 +213,38 @@ void UBg2ModelComponent::LoadMaterial(const TSharedPtr<FJsonObject> & materialDa
 	FString name = materialData->GetStringField("name");
 	FString type = materialData->GetStringField("class");
 
+	int32 meshIndex = mMaterialIndexes[name];
+
 	GLog->Log("Material name: " + name);
 	GLog->Log("Material class: " + type);
+
+	UMaterialInstanceDynamic * materialInstance = UMaterialInstanceDynamic::Create(mBaseMaterial, nullptr);
+
 	// TODO: read material
+	FString resourcesPath;
+	FString fileName;
+	FString extension;
+	FPaths::Split(mModelPath, resourcesPath, fileName, extension);
+
+	FString diffuseTexture;
+	const TArray<TSharedPtr<FJsonValue>> * diffuseColor;
+	if (materialData->TryGetStringField("diffuse", diffuseTexture))
+	{
+		FString fullPath = FPaths::Combine(resourcesPath, diffuseTexture);
+		GLog->Log("Load diffuse texture: " + fullPath);
+		UTexture2D * texture = UImageLoader::LoadImageFromDisk(this, fullPath);
+		materialInstance->SetTextureParameterValue(TEXT("DiffuseTexture"), texture);
+	}
+	else if (materialData->TryGetArrayField("diffuse", diffuseColor))
+	{
+		GLog->Log("Load diffuse color");
+		float components[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		for (int32 componentIndex = 0; componentIndex < diffuseColor->Num(); ++componentIndex)
+		{
+			components[componentIndex] = static_cast<float>((*diffuseColor)[componentIndex]->AsNumber());
+		}
+		materialInstance->SetVectorParameterValue(TEXT("DiffuseColor"), FLinearColor(components[0], components[1], components[2], components[3]));
+	}
+
+	ModelMesh->SetMaterial(meshIndex, materialInstance);
 }

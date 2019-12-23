@@ -7,6 +7,8 @@
 #include "ProceduralMeshComponent.h"
 
 #include <string>
+#include <map>
+
 #include "JsonUtilities.h"
 
 #include "Bg2ModelComponent.generated.h"
@@ -44,6 +46,8 @@ public:
 private:
 	FString mModelPath;
 	bool mModelPathChanged = false;
+	std::map<FString, int32> mMaterialIndexes;
+	UMaterial * mBaseMaterial;
 
 	bool LoadModelMesh();
 	void LoadMaterials(const std::string & materialData);

@@ -8,6 +8,8 @@
     "CreatedBy" : "Fernando Serrano Carpena",
     "CreatedByURL" : "https://www.bg2engine.org",
 
+    "CanContainContent" : true,
+
     "Modules" :
     [
         {
