@@ -160,7 +160,7 @@ bool UBg2ModelComponent::LoadModelMesh()
 			Triangles.Add(static_cast<int32>(i));
 		}
 		mMaterialIndexes[currentMatName] = currentMeshIndex;
-		ModelMesh->CreateMeshSection_LinearColor(currentMeshIndex, vertices, Triangles, normals, UV0, TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
+		ModelMesh->CreateMeshSection_LinearColor(currentMeshIndex, vertices, Triangles, normals, UV0, UV1, UV0, UV0, TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
 		++currentMeshIndex;
 		vertices.Empty();
 		normals.Empty();
