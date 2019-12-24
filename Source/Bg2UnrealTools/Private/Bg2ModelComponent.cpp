@@ -4,6 +4,7 @@
 #include "Bg2ModelComponent.h"
 
 #include "Bg2Reader.h"
+#include "Bg2Material.h"
 #include "ImageLoader.h"
 
 
@@ -197,13 +198,26 @@ void UBg2ModelComponent::LoadMaterials(const std::string & materialData)
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
 
+	FString basePath;
+	FString fileName;
+	FString extension;
+	FPaths::Split(mModelPath, basePath, fileName, extension);
+
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
 	{
 		GLog->Log("Material json parsed OK");
 		TArray<TSharedPtr<FJsonValue>> Materials = JsonObject->GetArrayField("Materials");
 		for (int32 matIndex = 0; matIndex < Materials.Num(); ++matIndex)
 		{
-			LoadMaterial(Materials[matIndex]->AsObject());
+			//LoadMaterial(Materials[matIndex]->AsObject());
+			const TSharedPtr<FJsonObject> materialData = Materials[matIndex]->AsObject();
+			FString name = materialData->GetStringField("name");
+			int32 meshIndex = mMaterialIndexes[name];
+			UMaterialInstanceDynamic * materialInstance = UBg2Material::LoadMaterialWithJsonObject(mBaseMaterial, this, materialData, basePath);
+			if (materialInstance)
+			{
+				ModelMesh->SetMaterial(meshIndex, materialInstance);
+			}
 		}
 	}
 }
