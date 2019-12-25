@@ -6,6 +6,7 @@
 #include "Bg2UnrealTools.h"
 #include "Bg2Reader.h"
 #include "Bg2Material.h"
+#include "Bg2Model.h"
 #include "ImageLoader.h"
 
 
@@ -102,6 +103,21 @@ void UBg2ModelComponent::LoadModelFromFilesystem()
 
 bool UBg2ModelComponent::LoadModelMesh()
 {
+	auto bg2Mesh = UBg2Model::Load(this, mBaseMaterial, mModelPath, Scale);
+	if (bg2Mesh)
+	{
+		ModelMesh->DestroyComponent();
+
+		ModelMesh = bg2Mesh;
+		ModelMesh->SetupAttachment(GetOwner()->GetRootComponent());
+		ModelMesh->RegisterComponent();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+	/*
 	Bg2Reader reader;
 
 	TArray<FVector> vertices;
@@ -188,6 +204,7 @@ bool UBg2ModelComponent::LoadModelMesh()
 		UE_LOG(Bg2Tools, Fatal, TEXT("Could not load bg2 model."));
 		return false;
 	}
+	*/
 }
 
 void UBg2ModelComponent::LoadMaterials(const std::string & materialData)
