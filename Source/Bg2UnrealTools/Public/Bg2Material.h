@@ -18,4 +18,6 @@ public:
 
 	static UMaterialInstanceDynamic * LoadMaterialWithJsonObject(UMaterial * BaseMaterial, UObject * Outer, const TSharedPtr<FJsonObject> & JsonObject, const FString & BasePath);
 
+	static void GetExternalResources(const TSharedPtr<FJsonObject> & JsonObject, TArray<FString> & Result);
+
 };

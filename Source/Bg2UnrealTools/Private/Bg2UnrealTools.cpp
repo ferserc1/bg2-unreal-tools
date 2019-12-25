@@ -3,6 +3,8 @@
 
 #include "Bg2UnrealTools.h"
 
+DEFINE_LOG_CATEGORY(Bg2Tools);
+
 void Bg2UnrealToolsImpl::StartupModule()
 {
 

@@ -7,6 +7,7 @@
 #include "JsonUtilities.h"
 #include "ConstructorHelpers.h"
 #include "Misc/Paths.h"
+#include "Bg2UnrealTools.h"
 
 class MaterialParser {
 public:
@@ -16,11 +17,36 @@ public:
 		VT_Color,
 		VT_Vector3,
 		VT_Vector2,
-		VT_Scalar
+		VT_Scalar,
+		VT_String
 	};
 
 	MaterialParser(UObject * Outer, const TSharedPtr<FJsonObject> & obj, const FString & basePath)
 		:mOuter(Outer), mJsonObject(obj), mBasePath(basePath) {}
+
+	bool IsPBR()
+	{
+		FString materialClass;
+		if (mJsonObject->TryGetStringField("class", materialClass))
+		{
+			return materialClass == "PBRMaterial";
+		}
+		else {
+			return false;
+		}
+	}
+
+	ValueType GetString(const FString & paramName)
+	{
+		mResultString = "";
+		if (mJsonObject->TryGetStringField(paramName, mResultString))
+		{
+			return VT_String;
+		}
+		else {
+			return VT_Null;
+		}
+	}
 
 	ValueType GetColorOrTexture(const FString & paramName)
 	{
@@ -123,6 +149,7 @@ public:
 		}
 	}
 
+	inline const FString & GetResultString() const { return mResultString; }
 	inline UTexture2D * GetResultTexture() { return mResultTexture; }
 	inline const FLinearColor & GetResultColor() const { return mResultColor; }
 	inline const FVector2D & GetResultVector2D() const { return mResultVector2; }
@@ -134,6 +161,7 @@ protected:
 	FString mBasePath;
 
 	// Result attributes
+	FString mResultString = "";
 	UTexture2D * mResultTexture = nullptr;
 	FLinearColor mResultColor;
 	FVector2D mResultVector2;
@@ -159,95 +187,145 @@ UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonObject(UMaterial * 
 {
 	UMaterialInstanceDynamic * result = nullptr;
 
-	// TODO: Check that the material type is PBR
-	// FString type = JsonObject->GetStringField("class");
-	
 	result = UMaterialInstanceDynamic::Create(BaseMaterial, Outer);
 	MaterialParser parser(Outer, JsonObject, BasePath);
-
-	switch (parser.GetColorOrTexture("diffuse"))
+	FString matName = "-";
+	if (parser.GetString("name"))
 	{
-	case MaterialParser::VT_Texture:
-	{
-		// Diffuse texture
-		result->SetTextureParameterValue(TEXT("DiffuseTexture"), parser.GetResultTexture());
-		if (parser.GetScalar("diffuseUV") == MaterialParser::VT_Scalar)
-		{
-			result->SetScalarParameterValue(TEXT("DiffuseUV"), parser.GetResultScalar());
-		}
-
-		if (parser.GetVector2("diffuseScale") == MaterialParser::VT_Vector2)
-		{
-			result->SetScalarParameterValue(TEXT("DiffuseScaleU"), parser.GetResultVector2D().X);
-			result->SetScalarParameterValue(TEXT("DiffuseScaleV"), parser.GetResultVector2D().Y);
-		}
-		break;
+		matName = parser.GetResultString();
 	}
-	case MaterialParser::VT_Color:
-		// Diffuse color
-		result->SetVectorParameterValue(TEXT("DiffuseColor"), parser.GetResultColor());
-		break;
+
+	if (parser.IsPBR())
+	{
+		switch (parser.GetColorOrTexture("diffuse"))
+		{
+		case MaterialParser::VT_Texture:
+		{
+			// Diffuse texture
+			result->SetTextureParameterValue(TEXT("DiffuseTexture"), parser.GetResultTexture());
+			if (parser.GetScalar("diffuseUV") == MaterialParser::VT_Scalar)
+			{
+				result->SetScalarParameterValue(TEXT("DiffuseUV"), parser.GetResultScalar());
+			}
+
+			if (parser.GetVector2("diffuseScale") == MaterialParser::VT_Vector2)
+			{
+				result->SetScalarParameterValue(TEXT("DiffuseScaleU"), parser.GetResultVector2D().X);
+				result->SetScalarParameterValue(TEXT("DiffuseScaleV"), parser.GetResultVector2D().Y);
+			}
+			break;
+		}
+		case MaterialParser::VT_Color:
+			// Diffuse color
+			result->SetVectorParameterValue(TEXT("DiffuseColor"), parser.GetResultColor());
+			break;
+		}
+
+
+		if (parser.GetTexture("normal") == MaterialParser::VT_Texture)
+		{
+			// Normal map
+			result->SetTextureParameterValue(TEXT("NormalTexture"), parser.GetResultTexture());
+			if (parser.GetScalar("normalUV") == MaterialParser::VT_Scalar)
+			{
+				result->SetScalarParameterValue(TEXT("NormalUV"), parser.GetResultScalar());
+			}
+			if (parser.GetVector2("normalScale") == MaterialParser::VT_Vector2)
+			{
+				result->SetScalarParameterValue(TEXT("NormalScaleU"), parser.GetResultVector2D().X);
+				result->SetScalarParameterValue(TEXT("NormalScaleV"), parser.GetResultVector2D().Y);
+			}
+		}
+
+		switch (parser.GetScalarOrTexture("roughness"))
+		{
+		case MaterialParser::VT_Texture:
+		{
+			result->SetTextureParameterValue(TEXT("RoughnessTexture"), parser.GetResultTexture());
+			if (parser.GetScalar("roughnessUV") == MaterialParser::VT_Scalar)
+			{
+				result->SetScalarParameterValue(TEXT("RoughnessUV"), parser.GetResultScalar());
+			}
+			if (parser.GetVector2("roughnessScale") == MaterialParser::VT_Vector2)
+			{
+				result->SetScalarParameterValue(TEXT("RoughnessScaleU"), parser.GetResultVector2D().X);
+				result->SetScalarParameterValue(TEXT("RoughnessScaleV"), parser.GetResultVector2D().Y);
+			}
+			break;
+		}
+		case MaterialParser::VT_Scalar:
+			result->SetScalarParameterValue(TEXT("Roughness"), parser.GetResultScalar());
+			break;
+		}
+
+		switch (parser.GetScalarOrTexture("metallic"))
+		{
+		case MaterialParser::VT_Texture:
+		{
+			result->SetTextureParameterValue(TEXT("MetallicTexture"), parser.GetResultTexture());
+			if (parser.GetScalar("metallicUV") == MaterialParser::VT_Scalar)
+			{
+				result->SetScalarParameterValue(TEXT("MetallicUV"), parser.GetResultScalar());
+			}
+			if (parser.GetVector2("MetallicScale") == MaterialParser::VT_Vector2)
+			{
+				result->SetScalarParameterValue(TEXT("MetallicScaleU"), parser.GetResultVector2D().X);
+				result->SetScalarParameterValue(TEXT("MetallicScaleV"), parser.GetResultVector2D().Y);
+			}
+			break;
+		}
+		case MaterialParser::VT_Scalar:
+			result->SetScalarParameterValue(TEXT("Metallic"), parser.GetResultScalar());
+			break;
+		}
+
+		switch (parser.GetScalarOrTexture("height"))
+		{
+		case MaterialParser::VT_Texture:
+		{
+			result->SetTextureParameterValue(TEXT("HeightTexture"), parser.GetResultTexture());
+			if (parser.GetScalar("heightUV") == MaterialParser::VT_Scalar)
+			{
+				result->SetScalarParameterValue(TEXT("HeightUV"), parser.GetResultScalar());
+			}
+			if (parser.GetVector2("heightScale") == MaterialParser::VT_Vector2)
+			{
+				result->SetScalarParameterValue(TEXT("HeightScaleU"), parser.GetResultVector2D().X);
+				result->SetScalarParameterValue(TEXT("HeightScaleV"), parser.GetResultVector2D().Y);
+			}
+		}
+		}
+	}
+	else
+	{
+		UE_LOG(Bg2Tools, Warning, TEXT("Could not load bg2 material: the material is not a PBR material. Material name: %s"), *matName);
 	}
 
 	
-	if (parser.GetTexture("normal") == MaterialParser::VT_Texture)
-	{
-		// Normal map
-		result->SetTextureParameterValue(TEXT("NormalTexture"), parser.GetResultTexture());
-		if (parser.GetScalar("normalUV") == MaterialParser::VT_Scalar)
-		{
-			result->SetScalarParameterValue(TEXT("NormalUV"), parser.GetResultScalar());
-		}
-		if (parser.GetVector2("normalScale") == MaterialParser::VT_Vector2)
-		{
-			result->SetScalarParameterValue(TEXT("NormalScaleU"), parser.GetResultVector2D().X);
-			result->SetScalarParameterValue(TEXT("NormalScaleV"), parser.GetResultVector2D().Y);
-		}
-	}
-
-	switch (parser.GetScalarOrTexture("roughness"))
-	{
-	case MaterialParser::VT_Texture:
-	{
-		result->SetTextureParameterValue(TEXT("RoughnessTexture"), parser.GetResultTexture());
-		if (parser.GetScalar("roughnessUV") == MaterialParser::VT_Scalar)
-		{
-			result->SetScalarParameterValue(TEXT("RoughnessUV"), parser.GetResultScalar());
-		}
-		if (parser.GetVector2("roughnessScale") == MaterialParser::VT_Vector2)
-		{
-			result->SetScalarParameterValue(TEXT("RoughnessScaleU"), parser.GetResultVector2D().X);
-			result->SetScalarParameterValue(TEXT("RoughnessScaleV"), parser.GetResultVector2D().Y);
-		}
-		break;
-	}
-	case MaterialParser::VT_Scalar:
-		result->SetScalarParameterValue(TEXT("Roughness"), parser.GetResultScalar());
-		break;
-	}
-	
-	switch (parser.GetScalarOrTexture("metallic"))
-	{
-	case MaterialParser::VT_Texture:
-	{
-		result->SetTextureParameterValue(TEXT("MetallicTexture"), parser.GetResultTexture());
-		if (parser.GetScalar("metallicUV") == MaterialParser::VT_Scalar)
-		{
-			result->SetScalarParameterValue(TEXT("MetallicUV"), parser.GetResultScalar());
-		}
-		if (parser.GetVector2("MetallicScale") == MaterialParser::VT_Vector2)
-		{
-			result->SetScalarParameterValue(TEXT("MetallicScaleU"), parser.GetResultVector2D().X);
-			result->SetScalarParameterValue(TEXT("MetallicScaleV"), parser.GetResultVector2D().Y);
-		}
-		break;
-	}
-	case MaterialParser::VT_Scalar:
-		result->SetScalarParameterValue(TEXT("Metallic"), parser.GetResultScalar());
-		break;
-	}
-
-
 	return result;
 }
+
+void UBg2Material::GetExternalResources(const TSharedPtr<FJsonObject> & JsonObject, TArray<FString> & Result)
+{
+	TArray<FString> resourceItems = {
+		"diffuse",
+		"metallic",
+		"roughness",
+		"height",
+		"normal"
+	};
+
+	for (auto i = 0; i < resourceItems.Num(); ++i)
+	{
+		const FString & key = resourceItems[i];
+		FString value;
+		double numberValue;
+		if (!JsonObject->TryGetNumberField(key, numberValue) && JsonObject->TryGetStringField(key, value))
+		{
+			Result.Add(value);
+		}
+	}
+}
+
+
 

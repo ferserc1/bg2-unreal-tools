@@ -3,6 +3,7 @@
 
 #include "Bg2ModelComponent.h"
 
+#include "Bg2UnrealTools.h"
 #include "Bg2Reader.h"
 #include "Bg2Material.h"
 #include "ImageLoader.h"
@@ -169,7 +170,7 @@ bool UBg2ModelComponent::LoadModelMesh()
 		Triangles.Empty();
 	})
 	.Error([&](const std::exception & e) {
-		// TODO: print error
+		UE_LOG(Bg2Tools, Error, TEXT("Error loading bg2 model: %s"), e.what());
 	});
 
 	ModelMesh->DestroyComponent(true);
@@ -184,7 +185,7 @@ bool UBg2ModelComponent::LoadModelMesh()
 	}
 	else
 	{
-		// Error
+		UE_LOG(Bg2Tools, Fatal, TEXT("Could not load bg2 model."));
 		return false;
 	}
 }
@@ -205,60 +206,26 @@ void UBg2ModelComponent::LoadMaterials(const std::string & materialData)
 
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
 	{
-		GLog->Log("Material json parsed OK");
+		UE_LOG(Bg2Tools, Display, TEXT("bg2 model: material json parsed OK"));
 		TArray<TSharedPtr<FJsonValue>> Materials = JsonObject->GetArrayField("Materials");
 		for (int32 matIndex = 0; matIndex < Materials.Num(); ++matIndex)
 		{
-			//LoadMaterial(Materials[matIndex]->AsObject());
-			const TSharedPtr<FJsonObject> materialData = Materials[matIndex]->AsObject();
-			FString name = materialData->GetStringField("name");
+			const TSharedPtr<FJsonObject> materialItemData = Materials[matIndex]->AsObject();
+			FString name = materialItemData->GetStringField("name");
 			int32 meshIndex = mMaterialIndexes[name];
-			UMaterialInstanceDynamic * materialInstance = UBg2Material::LoadMaterialWithJsonObject(mBaseMaterial, this, materialData, basePath);
+			UMaterialInstanceDynamic * materialInstance = UBg2Material::LoadMaterialWithJsonObject(mBaseMaterial, this, materialItemData, basePath);
 			if (materialInstance)
 			{
 				ModelMesh->SetMaterial(meshIndex, materialInstance);
+			}
+
+			TArray<FString> externalResources;
+			UBg2Material::GetExternalResources(materialItemData, externalResources);
+			for (int i = 0; i < externalResources.Num(); ++i)
+			{
+				UE_LOG(Bg2Tools, Display, TEXT("Resource: %s"), *externalResources[i]);
 			}
 		}
 	}
 }
 
-void UBg2ModelComponent::LoadMaterial(const TSharedPtr<FJsonObject> & materialData)
-{
-	FString name = materialData->GetStringField("name");
-	FString type = materialData->GetStringField("class");
-
-	int32 meshIndex = mMaterialIndexes[name];
-
-	GLog->Log("Material name: " + name);
-	GLog->Log("Material class: " + type);
-
-	UMaterialInstanceDynamic * materialInstance = UMaterialInstanceDynamic::Create(mBaseMaterial, nullptr);
-
-	// TODO: read material
-	FString resourcesPath;
-	FString fileName;
-	FString extension;
-	FPaths::Split(mModelPath, resourcesPath, fileName, extension);
-
-	FString diffuseTexture;
-	const TArray<TSharedPtr<FJsonValue>> * diffuseColor;
-	if (materialData->TryGetStringField("diffuse", diffuseTexture))
-	{
-		FString fullPath = FPaths::Combine(resourcesPath, diffuseTexture);
-		GLog->Log("Load diffuse texture: " + fullPath);
-		UTexture2D * texture = UImageLoader::LoadImageFromDisk(this, fullPath);
-		materialInstance->SetTextureParameterValue(TEXT("DiffuseTexture"), texture);
-	}
-	else if (materialData->TryGetArrayField("diffuse", diffuseColor))
-	{
-		GLog->Log("Load diffuse color");
-		float components[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-		for (int32 componentIndex = 0; componentIndex < diffuseColor->Num(); ++componentIndex)
-		{
-			components[componentIndex] = static_cast<float>((*diffuseColor)[componentIndex]->AsNumber());
-		}
-		materialInstance->SetVectorParameterValue(TEXT("DiffuseColor"), FLinearColor(components[0], components[1], components[2], components[3]));
-	}
-
-	ModelMesh->SetMaterial(meshIndex, materialInstance);
-}

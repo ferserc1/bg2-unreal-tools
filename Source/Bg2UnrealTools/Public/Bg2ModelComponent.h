@@ -51,5 +51,4 @@ private:
 
 	bool LoadModelMesh();
 	void LoadMaterials(const std::string & materialData);
-	void LoadMaterial(const TSharedPtr<FJsonObject> & materialData);
 };
