@@ -121,13 +121,6 @@ UProceduralMeshComponent * UBg2Model::Load(UObject * Outer, UMaterial * BaseMate
 				{
 					result->SetMaterial(meshIndex, materialInstance);
 				}
-
-				TArray<FString> externalResources;
-				UBg2Material::GetExternalResources(materialItemData, externalResources);
-				for (int i = 0; i < externalResources.Num(); ++i)
-				{
-					UE_LOG(Bg2Tools, Display, TEXT("Resource: %s"), *externalResources[i]);
-				}
 			}
 		}
 	}
@@ -142,5 +135,47 @@ UProceduralMeshComponent * UBg2Model::Load(UObject * Outer, UMaterial * BaseMate
 
 void UBg2Model::GetExternalResources(const FString & ModelPath, TArray<FString> & Result)
 {
-	UE_LOG(Bg2Tools, Warning, TEXT("Get bg2 model external resources: not implemented."));
+	Bg2Reader reader;
+	FString MaterialJsonString;
+	reader.Materials([&](const std::string & materialData) {
+		MaterialJsonString = "{\"Materials\":";
+		MaterialJsonString += FString(materialData.c_str());
+		MaterialJsonString += "}";
+	});
+
+	if (reader.Load(TCHAR_TO_UTF8(*ModelPath)))
+	{
+		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+		TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(MaterialJsonString);
+
+		FString basePath;
+		FString fileName;
+		FString extension;
+		FPaths::Split(ModelPath, basePath, fileName, extension);
+		TArray<FString> relativePathResources;
+		if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
+		{
+			UE_LOG(Bg2Tools, Display, TEXT("bg2 model: material json parsed OK"));
+			TArray<TSharedPtr<FJsonValue>> Materials = JsonObject->GetArrayField("Materials");
+			for (int32 matIndex = 0; matIndex < Materials.Num(); ++matIndex)
+			{
+				const TSharedPtr<FJsonObject> materialItemData = Materials[matIndex]->AsObject();
+				TArray<FString> externalResources;
+				UBg2Material::GetExternalResources(materialItemData, externalResources);
+				for (int i = 0; i < externalResources.Num(); ++i)
+				{
+					const FString & resource = externalResources[i];
+					if (relativePathResources.Find(resource) == INDEX_NONE)
+					{
+						relativePathResources.Add(resource);
+					}
+				}
+			}
+		}
+
+		for (int32 i = 0; i < relativePathResources.Num(); ++i)
+		{
+			Result.Add(FPaths::Combine(basePath, relativePathResources[i]));
+		}
+	}
 }

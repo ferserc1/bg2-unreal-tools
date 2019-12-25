@@ -84,7 +84,7 @@ void UBg2ModelComponent::LoadModelFromFilesystem()
 		{
 			FString DialogTitle = "Open file";
 			FString DefaultPath = FPaths::ProjectContentDir();
-			FString FileTypes = "bg2 files|*.bg2";
+			FString FileTypes = "bg2 files|*.bg2;vwglb files|*.vwglb";
 			TArray<FString> OutFileNames;
 			void * ParentWindowHandle = GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle();
 			IDesktopPlatform * DesktopPlatform = FDesktopPlatformModule::Get();
@@ -104,6 +104,14 @@ void UBg2ModelComponent::LoadModelFromFilesystem()
 bool UBg2ModelComponent::LoadModelMesh()
 {
 	auto bg2Mesh = UBg2Model::Load(this, mBaseMaterial, mModelPath, Scale);
+
+	TArray<FString> TestResources;
+	UBg2Model::GetExternalResources(mModelPath, TestResources);
+	for (int32 i = 0; i < TestResources.Num(); ++i)
+	{
+		UE_LOG(Bg2Tools, Display, TEXT("External resource: %s"), *TestResources[i]);
+	}
+
 	if (bg2Mesh)
 	{
 		ModelMesh->DestroyComponent();
