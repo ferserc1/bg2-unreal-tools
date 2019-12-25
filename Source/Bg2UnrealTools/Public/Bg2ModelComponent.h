@@ -50,5 +50,4 @@ private:
 	UMaterial * mBaseMaterial;
 
 	bool LoadModelMesh();
-	void LoadMaterials(const std::string & materialData);
 };

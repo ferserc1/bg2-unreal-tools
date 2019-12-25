@@ -139,3 +139,8 @@ UProceduralMeshComponent * UBg2Model::Load(UObject * Outer, UMaterial * BaseMate
 	}
 	return result;
 }
+
+void UBg2Model::GetExternalResources(const FString & ModelPath, TArray<FString> & Result)
+{
+	UE_LOG(Bg2Tools, Warning, TEXT("Get bg2 model external resources: not implemented."));
+}

@@ -13,5 +13,5 @@ class UBg2Model : public UObject
 
 public:
 	static UProceduralMeshComponent * Load(UObject * Outer, UMaterial * BaseMaterial, const FString & ModelPath, float Scale);
-
+	static void GetExternalResources(const FString & ModelPath, TArray<FString> & Result);
 };
