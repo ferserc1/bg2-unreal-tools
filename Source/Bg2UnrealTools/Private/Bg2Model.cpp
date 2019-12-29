@@ -9,7 +9,6 @@
 #include "Misc/Paths.h"
 
 #include "Bg2UnrealTools.h"
-#include "Bg2UnrealTools.h"
 #include "Bg2Reader.h"
 #include "Bg2Material.h"
 
