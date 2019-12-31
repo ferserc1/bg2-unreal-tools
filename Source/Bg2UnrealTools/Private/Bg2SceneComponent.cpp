@@ -83,7 +83,8 @@ void UBg2SceneComponent::LoadSceneFromFilesystem()
 
 bool UBg2SceneComponent::DoLoadScene()
 {
-	auto sceneRoot = UBg2Scene::Load(this, mBaseMaterial, mScenePath, Scale);
+	AActor * owner = Owner != nullptr ? Owner : GetOwner();
+	bool result = UBg2Scene::Load(owner, mBaseMaterial, mScenePath, Scale);
 
 	TArray<FString> TestResources;
 	UBg2Scene::GetExternalResources(mScenePath, TestResources);
@@ -92,13 +93,5 @@ bool UBg2SceneComponent::DoLoadScene()
 		UE_LOG(Bg2Tools, Display, TEXT("Scene external resource: %s"), *TestResources[i]);
 	}
 
-	if (sceneRoot)
-	{
-		// TODO: Add scene to this node
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return result;
 }

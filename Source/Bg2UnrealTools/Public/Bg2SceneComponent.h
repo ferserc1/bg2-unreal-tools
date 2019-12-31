@@ -23,6 +23,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BG2 Engine")
 	float Scale = 100.0f;
 
+	// If not specified, GetOwner() will be used.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BG2 Engine")
+	AActor * Owner = nullptr;
+
 	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
 	void LoadScene(FString modelPath);
 
