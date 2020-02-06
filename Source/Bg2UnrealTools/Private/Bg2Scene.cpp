@@ -11,38 +11,59 @@
 
 #include "Bg2UnrealTools.h"
 
+#include "bg2tools/matrix.hpp"
+
 struct ComponentData {
 	FTransform Transform = FTransform::Identity;
 	FString DrawablePath;
 	// TODO: Other relevant component data
 
-	void ParseComponentData(const TSharedPtr<FJsonObject> & compData, const FString & basePath)
+	void ParseComponentData(const TSharedPtr<FJsonObject> & compData, const FString & basePath, float scale)
 	{
 		FString compType = compData->GetStringField("type");
 		if (compType == "Transform")
 		{
-			ParseTransform(compData);
+			ParseTransform(compData, scale);
 		}
 		else if (compType == "Drawable")
 		{
-			ParseDrawable(compData, basePath);
+			ParseDrawable(compData, basePath, scale);
 		}
 	}
 
-	void ParseTransform(const TSharedPtr<FJsonObject> & compData)
+	void ParseTransform(const TSharedPtr<FJsonObject> & compData, float scale)
 	{
 		const TArray<TSharedPtr<FJsonValue>> * result;
 		if (compData->TryGetArrayField("transformMatrix", result) && result->Num()==16)
 		{
-			float matrix[16];
+			float m[16];
 			for (int32 i = 0; i < result->Num(); ++i)
 			{
-				matrix[i] = static_cast<float>((*result)[i]->AsNumber());
+				m[i] = static_cast<float>((*result)[i]->AsNumber());
 			}
+
+			
+			FMatrix mat;
+			mat.SetIdentity();
+			UE_LOG(LogTemp, Warning, TEXT("Scale: %f"), scale);
+			mat.M[0][0] = m[ 0]; mat.M[0][1] = m[ 2]; mat.M[0][2] = m[ 1]; mat.M[0][3] = m[ 3];
+			mat.M[1][0] = m[ 4]; mat.M[1][1] = m[ 6]; mat.M[1][2] = m[ 5]; mat.M[1][3] = m[ 7];
+			mat.M[2][0] = m[ 8]; mat.M[2][1] = m[10]; mat.M[2][2] = m[ 9]; mat.M[2][3] = m[11];
+			mat.M[3][0] = m[12]; mat.M[3][1] = m[14]; mat.M[3][2] = m[13]; mat.M[3][3] = m[15];
+			mat.ApplyScale(scale);
+
+			Transform.SetFromMatrix(mat);
+		}
+		else
+		{
+			FMatrix mat;
+			mat.SetIdentity();
+			mat.ApplyScale(scale);
+			Transform.SetFromMatrix(mat);
 		}
 	}
 
-	void ParseDrawable(const TSharedPtr<FJsonObject> & compData, const FString & basePath)
+	void ParseDrawable(const TSharedPtr<FJsonObject> & compData, const FString & basePath, float scale)
 	{
 		FString drawableName;
 		if (compData->TryGetStringField("name", drawableName))
@@ -95,7 +116,7 @@ public:
 		{
 			for (int32 i = 0; i < components->Num(); ++i)
 			{
-				result.ParseComponentData((*components)[i]->AsObject(), mBasePath);
+				result.ParseComponentData((*components)[i]->AsObject(), mBasePath, mScale);
 			}
 		}
 	}
@@ -119,16 +140,19 @@ public:
 		FActorSpawnParameters params;
 		params.Name = actorName;
 		params.Owner = ownerNode;
+		componentData.Transform.MultiplyScale3D({ mScale, mScale, mScale });
 		AActor * nodeActor = mWorld->SpawnActor<AActor>(AActor::StaticClass(), componentData.Transform, params);
 
 		if (componentData.DrawablePath != "")
 		{
 			// TODO: Load drawable
 			UE_LOG(Bg2Tools, Display, TEXT("Load drawable at path: %s"), *componentData.DrawablePath);
-			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, componentData.DrawablePath, mScale);
+			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, componentData.DrawablePath, 1.0f);
 			if (mesh)
 			{
 				mesh->SetupAttachment(nodeActor->GetRootComponent());
+				mesh->SetAbsolute(true, true, true);
+				mesh->SetWorldTransform(componentData.Transform);
 				mesh->RegisterComponent();
 			}
 		}
