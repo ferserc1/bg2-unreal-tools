@@ -24,6 +24,7 @@ namespace bg2tools {
 	struct DrawableData {
 		std::vector<PolyListData*> plists;
 		std::string materialData;
+		std::string modelPath;
 
 		bool loadDrawable(const std::string & path);
 
@@ -34,7 +35,7 @@ namespace bg2tools {
 	};
 
 	struct SceneObject {
-		float4x4 worldTransform;
+		float4x4 worldTransform = float4x4::Identity();
 		DrawableData drawable;
 	};
 

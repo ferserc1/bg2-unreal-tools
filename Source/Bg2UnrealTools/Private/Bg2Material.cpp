@@ -18,7 +18,8 @@ public:
 		VT_Vector3,
 		VT_Vector2,
 		VT_Scalar,
-		VT_String
+		VT_String,
+		VT_Boolean,
 	};
 
 	MaterialParser(UObject * Outer, const TSharedPtr<FJsonObject> & obj, const FString & basePath)
@@ -44,6 +45,18 @@ public:
 			return VT_String;
 		}
 		else {
+			return VT_Null;
+		}
+	}
+
+	ValueType GetBoolean(const FString& paramName)
+	{
+		if (mJsonObject->TryGetBoolField(paramName, mBoolValue))
+		{
+			return VT_Boolean;
+		}
+		else
+		{
 			return VT_Null;
 		}
 	}
@@ -154,6 +167,7 @@ public:
 	inline const FLinearColor & GetResultColor() const { return mResultColor; }
 	inline const FVector2D & GetResultVector2D() const { return mResultVector2; }
 	inline float GetResultScalar() const { return mResultScalar; }
+	inline bool GetResultBoolean() const { return mBoolValue; }
 
 protected:
 	UObject * mOuter;
@@ -166,16 +180,17 @@ protected:
 	FLinearColor mResultColor;
 	FVector2D mResultVector2;
 	float mResultScalar = 0.0f;
+	bool mBoolValue = false;
 };
 
-UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonString(UMaterial * BaseMaterial, UObject * Outer, const FString & JsonString, const FString & BasePath)
+UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonString(UMaterial * BaseMaterial, UObject * Outer, const FString & JsonString, const FString & BasePath, FMaterialProperties& MatProp)
 {
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
 
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
 	{
-		return LoadMaterialWithJsonObject(BaseMaterial, Outer, JsonObject, BasePath);
+		return LoadMaterialWithJsonObject(BaseMaterial, Outer, JsonObject, BasePath, MatProp);
 	}
 	else
 	{
@@ -183,7 +198,7 @@ UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonString(UMaterial * 
 	}
 }
 
-UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonObject(UMaterial * BaseMaterial, UObject * Outer, const TSharedPtr<FJsonObject> & JsonObject, const FString & BasePath)
+UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonObject(UMaterial * BaseMaterial, UObject * Outer, const TSharedPtr<FJsonObject> & JsonObject, const FString & BasePath, FMaterialProperties& MatProp)
 {
 	UMaterialInstanceDynamic * result = nullptr;
 
@@ -294,6 +309,15 @@ UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonObject(UMaterial * 
 				result->SetScalarParameterValue(TEXT("HeightScaleV"), parser.GetResultVector2D().Y);
 			}
 		}
+		}
+
+		if (parser.GetBoolean("visible") == MaterialParser::VT_Boolean)
+		{
+			MatProp.Visible = parser.GetResultBoolean();
+		}
+		else
+		{
+			MatProp.Visible = true;
 		}
 	}
 	else

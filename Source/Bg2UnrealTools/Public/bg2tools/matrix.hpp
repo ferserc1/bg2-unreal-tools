@@ -561,8 +561,8 @@ namespace bg2tools {
 	}
 
 	template <class T>
-	inline mat4x4<T> operator *(const mat4x4<T>& m, const vec3<T>& v) {
-		mat4x4<T> res;
+	inline vec3<T> operator *(const mat4x4<T>& m, const vec3<T>& v) {
+		vec4<T> res;
 		T x = v[0]; T y = v[1]; T z = v[2]; T w = static_cast<T>(1);
 
 		res[0] = m[0] * x + m[4] * y + m[8] * z +  m[12] * w;
@@ -570,12 +570,12 @@ namespace bg2tools {
 		res[2] = m[2] * x + m[6] * y + m[10] * z + m[14] * w;
 		res[3] = m[3] * x + m[7] * y + m[11] * z + m[15] * w;
 
-		return res;
+		return res.xyz();
 	}
 
 	template <class T>
-	inline mat4x4<T> operator *(const mat4x4<T>& m, const vec4<T>& v) {
-		mat4x4<T> res;
+	inline vec4<T> operator *(const mat4x4<T>& m, const vec4<T>& v) {
+		vec4<T> res;
 		T x = v[0]; T y = v[1]; T z = v[2]; T w = v[3];
 
 		res[0] = m[0] * x + m[4] * y + m[8] * z +  m[12] * w;

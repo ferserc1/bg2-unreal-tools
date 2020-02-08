@@ -8,7 +8,19 @@
 namespace bg2tools {
 
 	void PolyListData::applyTransform(const float4x4& trx) {
-		// TODO: aplicar trx a vértices y normales
+		for (size_t i = 0; i < vertex.size(); i += 3)
+		{
+			float3 v(vertex[i], vertex[i + 1], vertex[i + 2]);
+			float3 n(normal[i], normal[i + 1], normal[i + 2]);
+
+			v = trx * v;
+			float4x4 nmat = trx.rotation();
+			n = nmat * n;
+			n.normalize();
+
+			vertex[i] = v[0]; vertex[i + 1] = v[1]; vertex[i + 2] = v[2];
+			normal[i] = n[0]; normal[i + 1] = n[1]; normal[i + 2] = n[2];
+		}
 	}
 
 	DrawableData::~DrawableData() {
@@ -18,12 +30,8 @@ namespace bg2tools {
 		plists.clear();
 	}
 
-	// TODO: implementar Bg2Model::Load usando un DrawableData que cargaremos
-	// previamente con loadDrawable, es decir Bg2Model::Load no recibirá un path, sino
-	// un DrawableData. Este DrawableData puede haber sido convertido previamente
-	// con las funciones de aplicar matrices, para que las coordenadas de los objetos
-	// aparezcan ya transformadas
 	bool DrawableData::loadDrawable(const std::string& path) {
+		modelPath = path;
 		Bg2Reader reader;
 		PolyListData * currentPolyList = new PolyListData();
 
