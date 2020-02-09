@@ -36,7 +36,14 @@ namespace bg2tools {
 
 	struct SceneObject {
 		float4x4 worldTransform = float4x4::Identity();
-		DrawableData drawable;
+		DrawableData * drawable = nullptr;
+		std::string name;
+
+		~SceneObject() {
+			if (drawable) {
+				delete drawable;
+			}
+		}
 	};
 
 }

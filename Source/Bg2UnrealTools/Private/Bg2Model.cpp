@@ -27,9 +27,9 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 	}
 
 	result = NewObject<UProceduralMeshComponent>(Outer, UProceduralMeshComponent::StaticClass(), TEXT("bg2 engine mesh"));
-	sceneObject->drawable.applyTransform(sceneObject->worldTransform);
+	sceneObject->drawable->applyTransform(sceneObject->worldTransform);
 
-	for (auto pl : sceneObject->drawable.plists)
+	for (auto pl : sceneObject->drawable->plists)
 	{
 		TArray<FVector> vertices;
 		TArray<int32> Triangles;
@@ -61,7 +61,7 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 
 	// Load materials
 	FString JsonString = "{\"Materials\":";
-	JsonString += FString(sceneObject->drawable.materialData.c_str());
+	JsonString += FString(sceneObject->drawable->materialData.c_str());
 	JsonString += "}";
 
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
@@ -70,7 +70,7 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 	FString basePath;
 	FString fileName;
 	FString extension;
-	FPaths::Split(sceneObject->drawable.modelPath.c_str(), basePath, fileName, extension);
+	FPaths::Split(sceneObject->drawable->modelPath.c_str(), basePath, fileName, extension);
 
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
 	{
@@ -101,7 +101,8 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 UProceduralMeshComponent * UBg2Model::Load(UObject * Outer, UMaterial * BaseMaterial, const FString & ModelPath, float Scale)
 {
 	bg2tools::SceneObject sceneObject;
-	if (sceneObject.drawable.loadDrawable(TCHAR_TO_UTF8(*ModelPath)))
+	sceneObject.drawable = new bg2tools::DrawableData;
+	if (sceneObject.drawable->loadDrawable(TCHAR_TO_UTF8(*ModelPath)))
 	{
 		sceneObject.worldTransform
 			.scale({ Scale, Scale, Scale })

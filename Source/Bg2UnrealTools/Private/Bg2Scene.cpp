@@ -10,8 +10,10 @@
 #include "Misc/Paths.h"
 
 #include "Bg2UnrealTools.h"
+#include "Bg2Model.h"
 
 #include "bg2tools/matrix.hpp"
+#include "bg2tools/bg2_scene.hpp"
 
 struct ComponentData {
 	FTransform Transform = FTransform::Identity;
@@ -82,92 +84,241 @@ struct ComponentData {
 	}
 };
 
+//class SceneParser {
+//public:
+//	SceneParser(UWorld * World, AActor * RootActor, UMaterial * BaseMaterial, const TSharedPtr<FJsonObject> & Obj, const FString & BasePath, float Scale)
+//		:mWorld(World), mRootActor(RootActor), mBaseMaterial(BaseMaterial), mJsonObject(Obj), mBasePath(BasePath), mScale(Scale) {}
+//
+//
+//	bool LoadScene()
+//	{
+//		ParseNodeArray("scene", mJsonObject, mRootActor);
+//		// TODO: Error handling
+//		return true;
+//	}
+//
+//	void ParseNodeArray(const FString & attrName, const TSharedPtr<FJsonObject> & nodeData, AActor * parentActor)
+//	{
+//		const TArray<TSharedPtr<FJsonValue>> * nodes;
+//
+//		if (nodeData->TryGetArrayField(attrName, nodes))
+//		{
+//			for (int32 i = 0; i < nodes->Num(); ++i)
+//			{
+//				auto child = (*nodes)[i]->AsObject();
+//				ParseNode(child, parentActor);
+//			}
+//		}
+//	}
+//
+//	void ParseComponents(const TSharedPtr<FJsonObject> & nodeData, ComponentData & result)
+//	{
+//		const TArray<TSharedPtr<FJsonValue>> * components;
+//		if (nodeData->TryGetArrayField("components", components))
+//		{
+//			for (int32 i = 0; i < components->Num(); ++i)
+//			{
+//				result.ParseComponentData((*components)[i]->AsObject(), mBasePath, mScale);
+//			}
+//		}
+//	}
+//
+//	void ParseNode(const TSharedPtr<FJsonObject> & node, AActor * ownerNode)
+//	{
+//		ComponentData componentData;
+//		FName actorName;
+//		FString nameString;
+//		if (!node->TryGetStringField("name", nameString))
+//		{
+//			actorName = "bg2 node actor";
+//		}
+//		else
+//		{
+//			actorName = FName(*nameString);
+//		}
+//
+//		ParseComponents(node, componentData);
+//
+//		FActorSpawnParameters params;
+//		params.Name = actorName;
+//		params.Owner = ownerNode;
+//		componentData.Transform.MultiplyScale3D({ mScale, mScale, mScale });
+//		AActor * nodeActor = mWorld->SpawnActor<AActor>(AActor::StaticClass(), componentData.Transform, params);
+//
+//		if (componentData.DrawablePath != "")
+//		{
+//			// TODO: Load drawable
+//			UE_LOG(Bg2Tools, Display, TEXT("Load drawable at path: %s"), *componentData.DrawablePath);
+//			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, componentData.DrawablePath, 1.0f);
+//			if (mesh)
+//			{
+//				mesh->SetupAttachment(nodeActor->GetRootComponent());
+//				mesh->SetAbsolute(true, true, true);
+//				mesh->SetWorldTransform(componentData.Transform);
+//				mesh->RegisterComponent();
+//			}
+//		}
+//
+//		ParseNodeArray("children", node, nodeActor);
+//	}
+//
+//protected:
+//	UWorld * mWorld;
+//	AActor * mRootActor;
+//	UMaterial * mBaseMaterial;
+//	const TSharedPtr<FJsonObject> mJsonObject;
+//	FString mBasePath;
+//	float mScale;
+//};
+//
+
 class SceneParser {
 public:
-	SceneParser(UWorld * World, AActor * RootActor, UMaterial * BaseMaterial, const TSharedPtr<FJsonObject> & Obj, const FString & BasePath, float Scale)
+	SceneParser(UWorld* World, AActor* RootActor, UMaterial* BaseMaterial, const TSharedPtr<FJsonObject>& Obj, const FString& BasePath, float Scale)
 		:mWorld(World), mRootActor(RootActor), mBaseMaterial(BaseMaterial), mJsonObject(Obj), mBasePath(BasePath), mScale(Scale) {}
-
 
 	bool LoadScene()
 	{
-		ParseNodeArray("scene", mJsonObject, mRootActor);
-		// TODO: Error handling
-		return true;
+		ParseNodeArray("scene", mJsonObject);
+		for (auto node : mScene.sceneObjects())
+		{
+			FActorSpawnParameters params;
+			params.Name = FName(node->name.c_str());
+			params.Owner = mRootActor;
+			AActor* nodeActor = mWorld->SpawnActor<AActor>(AActor::StaticClass(), params);
+
+			node->worldTransform = 
+				bg2tools::float4x4::Rotation(bg2tools::radians(90.0f), 1, 0, 0) *
+				bg2tools::float4x4::Scale({ mScale, mScale, mScale }) *
+				node->worldTransform;
+
+			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, node);
+			if (mesh)
+			{
+				mesh->SetupAttachment(nodeActor->GetRootComponent());
+				mesh->RegisterComponent();
+			}
+		}
+		return false;
 	}
 
-	void ParseNodeArray(const FString & attrName, const TSharedPtr<FJsonObject> & nodeData, AActor * parentActor)
+	void ParseNodeArray(const FString& attrName, const TSharedPtr<FJsonObject>& nodeData)
 	{
-		const TArray<TSharedPtr<FJsonValue>> * nodes;
-
+		const TArray<TSharedPtr<FJsonValue>>* nodes;
 		if (nodeData->TryGetArrayField(attrName, nodes))
 		{
 			for (int32 i = 0; i < nodes->Num(); ++i)
 			{
 				auto child = (*nodes)[i]->AsObject();
-				ParseNode(child, parentActor);
+				ParseNode(child);
 			}
 		}
 	}
 
-	void ParseComponents(const TSharedPtr<FJsonObject> & nodeData, ComponentData & result)
+	void ParseNode(const TSharedPtr<FJsonObject>& nodeData)
 	{
-		const TArray<TSharedPtr<FJsonValue>> * components;
+		mScene.pushMatrix();
+		FString nameString;
+		if (nodeData->TryGetStringField("name", nameString))
+		{
+			mScene.setCurrentName(TCHAR_TO_UTF8(*nameString));
+		}
+		else
+		{
+			mScene.setCurrentName("untitled node");
+		}
+
+		ParseComponents(nodeData);
+
+		ParseNodeArray("children", nodeData);
+		mScene.tryAddNode();
+		mScene.popMatrix();
+	}
+
+	void ParseComponents(const TSharedPtr<FJsonObject>& nodeData)
+	{
+		const TArray<TSharedPtr<FJsonValue>>* components;
 		if (nodeData->TryGetArrayField("components", components))
 		{
 			for (int32 i = 0; i < components->Num(); ++i)
 			{
-				result.ParseComponentData((*components)[i]->AsObject(), mBasePath, mScale);
+				ParseComponentData((*components)[i]->AsObject());
 			}
 		}
 	}
 
-	void ParseNode(const TSharedPtr<FJsonObject> & node, AActor * ownerNode)
+	void ParseComponentData(const TSharedPtr<FJsonObject>& componentData)
 	{
-		ComponentData componentData;
-		FName actorName;
-		FString nameString;
-		if (!node->TryGetStringField("name", nameString))
+		FString compType = componentData->GetStringField("type");
+		if (compType == "Transform")
 		{
-			actorName = "bg2 node actor";
+			ParseTransform(componentData);
 		}
-		else
+		else if (compType == "Drawable")
 		{
-			actorName = FName(*nameString);
+			ParseDrawable(componentData);
 		}
+	}
 
-		ParseComponents(node, componentData);
-
-		FActorSpawnParameters params;
-		params.Name = actorName;
-		params.Owner = ownerNode;
-		componentData.Transform.MultiplyScale3D({ mScale, mScale, mScale });
-		AActor * nodeActor = mWorld->SpawnActor<AActor>(AActor::StaticClass(), componentData.Transform, params);
-
-		if (componentData.DrawablePath != "")
+	void ParseTransform(const TSharedPtr<FJsonObject>& transformData)
+	{
+		const TArray<TSharedPtr<FJsonValue>>* result;
+		if (transformData->TryGetArrayField("transformMatrix", result) && result->Num() == 16)
 		{
-			// TODO: Load drawable
-			UE_LOG(Bg2Tools, Display, TEXT("Load drawable at path: %s"), *componentData.DrawablePath);
-			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, componentData.DrawablePath, 1.0f);
-			if (mesh)
+			float m[16];
+			for (int32 i = 0; i < result->Num(); ++i)
 			{
-				mesh->SetupAttachment(nodeActor->GetRootComponent());
-				mesh->SetAbsolute(true, true, true);
-				mesh->SetWorldTransform(componentData.Transform);
-				mesh->RegisterComponent();
+				m[i] = static_cast<float>((*result)[i]->AsNumber());
+			}
+
+			bg2tools::float4x4 matrix(
+				m[ 0], m[ 1], m[ 2], m[ 3],
+				m[ 4], m[ 5], m[ 6], m[ 7],
+				m[ 8], m[ 9], m[10], m[11],
+				m[12], m[13], m[14], m[15]
+			);
+
+			mScene.multMatrix(matrix);
+		}
+	}
+
+	void ParseDrawable(const TSharedPtr<FJsonObject>& drawableData)
+	{
+		FString drawableName;
+		if (drawableData->TryGetStringField("name", drawableName))
+		{
+			FString drawablePath = FPaths::Combine(mBasePath, drawableName);
+			if (FPaths::FileExists(drawablePath + ".vwglb"))
+			{
+				drawablePath.Append(".vwglb");
+			}
+			else if (FPaths::FileExists(drawablePath + ".bg2"))
+			{
+				drawablePath.Append(".bg2");
+			}
+			else {
+				return;
+			}
+
+			auto drw = new bg2tools::DrawableData();
+			if (drw->loadDrawable(TCHAR_TO_UTF8(*drawablePath)))
+			{
+				mScene.setCurrentDrawable(drw);
 			}
 		}
-
-		ParseNodeArray("children", node, nodeActor);
 	}
 
 protected:
-	UWorld * mWorld;
-	AActor * mRootActor;
-	UMaterial * mBaseMaterial;
+	UWorld* mWorld;
+	AActor* mRootActor;
+	UMaterial* mBaseMaterial;
 	const TSharedPtr<FJsonObject> mJsonObject;
 	FString mBasePath;
 	float mScale;
+
+	bg2tools::Bg2Scene mScene;
 };
+
 
 bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const FString & ScenePath, float Scale)
 {

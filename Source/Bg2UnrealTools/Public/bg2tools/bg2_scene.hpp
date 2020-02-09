@@ -14,7 +14,21 @@ namespace bg2tools {
 
 	class Bg2Scene {
 	public:
-		
+		~Bg2Scene() {
+			for (auto so : _sceneObjects) {
+				delete so;
+			}
+			_sceneObjects.clear();
+		}
+
+		inline const std::string& currentName() const {
+			return _currentName;
+		}
+
+		inline void setCurrentName(const std::string& name) {
+			_currentName = name;
+		}
+
 		inline const float4x4 & currentMatrix() const {
 			return _currentMatrix;
 		}
@@ -28,24 +42,44 @@ namespace bg2tools {
 		}
 
 		inline void popMatrix() {
+			_currentMatrix = _matrixStack.back();
 			_matrixStack.pop_back();
 		}
 
-		inline void addDrawable(const DrawableData& drw) {
-			_sceneObjects.push_back({
-				_currentMatrix,
-				drw
-			});
+		inline void setCurrentDrawable(DrawableData* drw) {
+			_currentDrawable = drw;
 		}
 
-		inline const std::vector<SceneObject> sceneObjects() const {
+		inline void tryAddNode() {
+			if (_currentDrawable) {
+				auto so = new SceneObject();
+				so->worldTransform = _currentMatrix;
+				so->drawable = _currentDrawable;
+				so->name = _currentName;
+				_sceneObjects.push_back(so);
+				_currentDrawable = nullptr;
+			}
+		}
+
+		inline const std::vector<SceneObject*> sceneObjects() const {
 			return _sceneObjects;
 		}
 
+		inline SceneObject* currentObject() {
+			if (_sceneObjects.size() > 0) {
+				return _sceneObjects.back();
+			}
+			else {
+				return nullptr;
+			}
+		}
+
 	protected:
-		float4x4 _currentMatrix;
+		float4x4 _currentMatrix = float4x4::Identity();
+		std::string _currentName;
+		DrawableData * _currentDrawable = nullptr;
 		std::vector<float4x4> _matrixStack;
-		std::vector<SceneObject> _sceneObjects;
+		std::vector<SceneObject*> _sceneObjects;
 	};
 }
 

@@ -13,7 +13,7 @@ namespace bg2tools {
 			float3 v(vertex[i], vertex[i + 1], vertex[i + 2]);
 			float3 n(normal[i], normal[i + 1], normal[i + 2]);
 
-			v = trx * v;
+			v = trx *  v;
 			float4x4 nmat = trx.rotation();
 			n = nmat * n;
 			n.normalize();
