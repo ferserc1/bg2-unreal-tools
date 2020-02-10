@@ -47,11 +47,11 @@ void ABg2SceneLoader::LoadScene(FString Path, float Scale)
 void ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
 {
 	// TODO: Debug code
-	//FString path = "F:/Unreal Projects/Bg2UnrealToolsExample/sample_scene/sample_scene.vitscnj";
-	//LoadScene(path, Scale);
-	//return;
+	FString path = "F:/Unreal Projects/Bg2UnrealToolsExample/sample_scene/sample_scene.vitscnj";
+	LoadScene(path, Scale);
+	return;
 	
-	if (GEngine)
+	/*if (GEngine)
 	{
 		if (GEngine->GameViewport)
 		{
@@ -71,7 +71,7 @@ void ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
 				}
 			}
 		}
-	}
+	}*/
 }
 
 void ABg2SceneLoader::CloseScene()

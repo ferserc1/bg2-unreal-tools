@@ -38,13 +38,22 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 		TArray<FVector2D> UV1;
 
 		size_t i2 = 0;
-		for (size_t i3 = 0; i3 < pl->vertex.size(); i3 += 3)
+		for (size_t i3 = 0; i3 < pl->vertex.size(); i3 += 3, i2 += 2)
 		{
-			vertices.Add({ pl->vertex[i3], pl->vertex[i3 + 1], pl->vertex[i3 + 2] });
-			normals.Add({ pl->normal[i3], pl->normal[i3 + 1], pl->normal[i3 + 2] });
+			auto x = pl->vertex[i3];
+			auto y = pl->vertex[i3 + 1];
+			auto z = pl->vertex[i3 + 2];
+			auto nx = pl->normal[i3];
+			auto ny = pl->normal[i3 + 1];
+			auto nz = pl->normal[i3 + 2];
+
+			auto vertex = FVector(x, z, y);
+			auto normal = -1.0 * FVector(nx, nz, ny);
+
+			vertices.Add(vertex);
+			normals.Add(normal);
 			UV0.Add({ pl->uv0[i2], pl->uv0[i2 + 1] });
 			UV1.Add({ pl->uv1[i2], pl->uv1[i2 + 1] });
-			i2 += 2;
 		}
 
 		for (size_t i = 0; i < pl->index.size(); i += 3)

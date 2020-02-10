@@ -188,7 +188,7 @@ public:
 			AActor* nodeActor = mWorld->SpawnActor<AActor>(AActor::StaticClass(), params);
 
 			node->worldTransform = 
-				bg2tools::float4x4::Rotation(bg2tools::radians(90.0f), 1, 0, 0) *
+				//bg2tools::float4x4::Rotation(bg2tools::radians(90.0f), 1, 0, 0) *
 				bg2tools::float4x4::Scale({ mScale, mScale, mScale }) *
 				node->worldTransform;
 
