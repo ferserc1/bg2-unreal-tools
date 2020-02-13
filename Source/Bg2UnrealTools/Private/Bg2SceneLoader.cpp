@@ -5,7 +5,7 @@
 #include "Bg2Scene.h"
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
 #include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
-
+#include "ConstructorHelpers.h"
 
 // Sets default values
 ABg2SceneLoader::ABg2SceneLoader()
@@ -13,7 +13,16 @@ ABg2SceneLoader::ABg2SceneLoader()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	SceneRoot = nullptr;
-	BaseMaterial = nullptr;
+
+	ConstructorHelpers::FObjectFinder<UMaterial> MaterialFinder(TEXT("/Bg2UnrealTools/Materials/TestMaterial"));
+	if (MaterialFinder.Succeeded())
+	{
+		BaseMaterial = MaterialFinder.Object;
+	}
+	else
+	{
+		BaseMaterial = CreateDefaultSubobject<UMaterial>(TEXT("InvalidBaseMaterial"));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -46,12 +55,7 @@ void ABg2SceneLoader::LoadScene(FString Path, float Scale)
 
 void ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
 {
-	// TODO: Debug code
-	FString path = "F:/Unreal Projects/Bg2UnrealToolsExample/sample_scene/sample_scene.vitscnj";
-	LoadScene(path, Scale);
-	return;
-	
-	/*if (GEngine)
+	if (GEngine)
 	{
 		if (GEngine->GameViewport)
 		{
@@ -71,7 +75,7 @@ void ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
 				}
 			}
 		}
-	}*/
+	}
 }
 
 void ABg2SceneLoader::CloseScene()

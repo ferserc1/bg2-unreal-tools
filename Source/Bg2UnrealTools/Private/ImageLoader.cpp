@@ -76,11 +76,11 @@ UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & 
 	NewTexture->PlatformData->SizeX = InSizeX;
 	NewTexture->PlatformData->SizeY = InSizeY;
 	NewTexture->PlatformData->PixelFormat = InFormat;
+	NewTexture->Filter = TF_Trilinear;
 
 	// Allocate first mipmap and upload the pixel data
 	int32 NumBlocksX = InSizeX / GPixelFormats[InFormat].BlockSizeX;
 	int32 NumBlocksY = InSizeY / GPixelFormats[InFormat].BlockSizeY;
-	//FTexture2DMipMap * Mip = new(NewTexture->PlatformData->Mips) FTexture2DMipMap();
 	FTexture2DMipMap * Mip = new FTexture2DMipMap();
 	NewTexture->PlatformData->Mips.Add(Mip);
 	Mip->SizeX = InSizeX;
@@ -89,6 +89,84 @@ UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & 
 	void * TextureData = Mip->BulkData.Realloc(NumBlocksX * NumBlocksY * GPixelFormats[InFormat].BlockBytes);
 	FMemory::Memcpy(TextureData, PixelData.GetData(), PixelData.Num());
 	Mip->BulkData.Unlock();
+
+		// Mipmap generation
+		int mipsToAdd = 3;
+		TArray<uint8_t> _mipRGBAs;
+		TArray<uint8_t> _mipRGBBs;
+
+		auto* priorData = (const uint8*)NewTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+		int priorWidth = NewTexture->PlatformData->Mips[0].SizeX;
+		int priorHeight = NewTexture->PlatformData->Mips[0].SizeY;
+		const int BYTES_PER_PIXEL = 4;
+
+		while (mipsToAdd > 0)
+		{
+			auto* mipRGBAs = mipsToAdd & 1 ? &_mipRGBAs : &_mipRGBBs;
+
+			int mipWidth = priorWidth >> 1;
+			int mipHeight = priorHeight >> 1;
+			if ((mipWidth == 0) || (mipHeight == 0))
+			{
+				break;
+			}
+
+			mipRGBAs->Reset();
+			mipRGBAs->AddUninitialized(mipWidth * mipHeight * BYTES_PER_PIXEL);
+			int dataPerRow = priorWidth * BYTES_PER_PIXEL;
+
+			auto* dataOut = mipRGBAs->GetData();
+			for (int y = 0; y < mipHeight; ++y)
+			{
+				auto* dataInRow0 = priorData + (dataPerRow * y * 2);
+				auto* dataInRow1 = dataInRow0 + dataPerRow;
+				for (int x = 0; x < mipWidth; x++)
+				{
+					int totalB = *dataInRow0++;
+					int totalG = *dataInRow0++;
+					int totalR = *dataInRow0++;
+					int totalA = *dataInRow0++;
+					totalB += *dataInRow0++;
+					totalG += *dataInRow0++;
+					totalR += *dataInRow0++;
+					totalA += *dataInRow0++;
+
+					totalB += *dataInRow1++;
+					totalG += *dataInRow1++;
+					totalR += *dataInRow1++;
+					totalA += *dataInRow1++;
+					totalB += *dataInRow1++;
+					totalG += *dataInRow1++;
+					totalR += *dataInRow1++;
+					totalA += *dataInRow1++;
+
+					totalB >>= 2;
+					totalG >>= 2;
+					totalR >>= 2;
+					totalA >>= 2;
+
+					*dataOut++ = (uint8)totalB;
+					*dataOut++ = (uint8)totalG;
+					*dataOut++ = (uint8)totalR;
+					*dataOut++ = (uint8)totalA;
+				}
+				dataInRow0 += priorWidth * 2;
+				dataInRow1 += priorWidth * 2;
+			}
+			Mip = new(NewTexture->PlatformData->Mips) FTexture2DMipMap();
+			Mip->SizeX = mipWidth;
+			Mip->SizeY = mipHeight;
+			Mip->BulkData.Lock(LOCK_READ_WRITE);
+			void* mipData = Mip->BulkData.Realloc(mipRGBAs->Num());
+			FMemory::Memcpy(mipData, mipRGBAs->GetData(), mipRGBAs->Num());
+			Mip->BulkData.Unlock();
+
+			priorData = mipRGBAs->GetData();
+			priorWidth = mipWidth;
+			priorHeight = mipHeight;
+			--mipsToAdd;
+		}
+		NewTexture->PlatformData->Mips[0].BulkData.Unlock();
 
 	NewTexture->UpdateResource();
 	return NewTexture;
