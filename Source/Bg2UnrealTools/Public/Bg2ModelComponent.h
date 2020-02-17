@@ -31,7 +31,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "BG2 Engine")
 	UProceduralMeshComponent * ModelMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BG2 Engine")

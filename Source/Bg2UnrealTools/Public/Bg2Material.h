@@ -12,7 +12,7 @@ struct FMaterialProperties
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "BG2 Engine")
 	bool Visible;
 };
 

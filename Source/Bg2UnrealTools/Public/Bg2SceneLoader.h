@@ -23,19 +23,19 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
 	void LoadScene(FString Path, float Scale = 100.0f);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
 	void LoadSceneFromFilesystem(float Scale = 100.0f);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
 	void CloseScene();
 
 	UPROPERTY()
 	AActor* SceneRoot;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "BG2 Engine")
 	UMaterial * BaseMaterial;
 
 };

@@ -9,6 +9,7 @@
     "CreatedByURL" : "https://www.bg2engine.org",
 
     "CanContainContent" : true,
+    "Installed": true,
 
     "Modules" :
     [

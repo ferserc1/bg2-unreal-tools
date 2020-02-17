@@ -55,6 +55,8 @@ void ABg2SceneLoader::LoadScene(FString Path, float Scale)
 
 void ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
 {
+	//FString testPath = "F:/Unreal Projects/Bg2UnrealToolsExample/sample_scene/sample_scene.vitscnj";
+	//LoadScene(testPath, Scale);
 	if (GEngine)
 	{
 		if (GEngine->GameViewport)

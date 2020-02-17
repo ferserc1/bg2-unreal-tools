@@ -45,9 +45,9 @@ public:
 
 protected:
 
-    void ReadHeader(std::string & materialsString, unsigned int & numberOfPlist);
-    void ReadPolyList(int numberOfPlist);
-    void ReadSinglePolyList();
+    bool ReadHeader(std::string & materialsString, unsigned int & numberOfPlist);
+    bool ReadPolyList(int numberOfPlist);
+    bool ReadSinglePolyList();
     void ParseMaterialOverride(const std::string &);
 
     Bg2MeshParser mMeshParser;

@@ -36,27 +36,32 @@ bool Bg2Reader::Load(const std::string & path)
 
     if (mMeshParser.Open(path, Bg2MeshParser::kModeRead))
     {
-        try 
-        {
+        //try 
+        //{
             std::string materialsString;
             unsigned int numberOfPlist = 0;
-            ReadHeader(materialsString, numberOfPlist);
+            if (!ReadHeader(materialsString, numberOfPlist))
+            {
+                return false;
+            }
 
-            ReadPolyList(numberOfPlist);
+            if (!ReadPolyList(numberOfPlist)) {
+                return false;
+            }
 
             mMeshParser.Close();
 
             ParseMaterialOverride(path);
 
             return true;
-        }
-        catch (std::exception & e)
-        {
-            if (mExceptionClosure) 
-            {
-                mExceptionClosure(e);
-            }
-        }
+        //}
+        //catch (std::exception & e)
+        //{
+        //    if (mExceptionClosure) 
+        //    {
+        //        mExceptionClosure(e);
+        //    }
+        //}
     }
     return false;
 }
@@ -66,7 +71,7 @@ bool Bg2Reader::LoadHeader(const std::string & path)
     return true;
 }
 
-void Bg2Reader::ReadHeader(std::string & materialsString, unsigned int & numberOfPlist)
+bool Bg2Reader::ReadHeader(std::string & materialsString, unsigned int & numberOfPlist)
 {
     //// File header
     // File endian 0=big endian, 1=little endian
@@ -99,7 +104,8 @@ void Bg2Reader::ReadHeader(std::string & materialsString, unsigned int & numberO
     mMeshParser.ReadBlock(btype);
     if (btype != Bg2MeshParser::kHeader)
     {
-        throw std::runtime_error("Bg2 file format exception. Expecting begin of file header.");
+        //throw std::runtime_error("Bg2 file format exception. Expecting begin of file header.");
+        return false;
     }
 
     // Number of poly list
@@ -116,7 +122,8 @@ void Bg2Reader::ReadHeader(std::string & materialsString, unsigned int & numberO
     mMeshParser.ReadBlock(block);
     if (block != Bg2MeshParser::kMaterials)
     {
-        throw std::runtime_error("Bg2 file format exception. Expecting material list.");
+        //throw std::runtime_error("Bg2 file format exception. Expecting material list.");
+        return false;
     }
 
     mMeshParser.ReadString(materialsString);
@@ -186,25 +193,28 @@ void Bg2Reader::ReadHeader(std::string & materialsString, unsigned int & numberO
     {
         mMeshParser.SeekForward(-4);
     }
+    return true;
 }
 
-void Bg2Reader::ReadPolyList(int numberOfPlist)
+bool Bg2Reader::ReadPolyList(int numberOfPlist)
 {
     Bg2MeshParser::BlockType block;
 
     mMeshParser.ReadBlock(block);
     if (block != Bg2MeshParser::kPolyList)
     {
-        throw std::runtime_error("Bg2: File format exception. Expecting poly list");
+        //throw std::runtime_error("Bg2: File format exception. Expecting poly list");
+        return false;
     }
 
     for (int i = 0; i < numberOfPlist; ++i)
     {
         ReadSinglePolyList();
     }
+    return true;
 }
 
-void Bg2Reader::ReadSinglePolyList()
+bool Bg2Reader::ReadSinglePolyList()
 {
     Bg2MeshParser::BlockType block;
     bool done = false;
@@ -244,7 +254,8 @@ void Bg2Reader::ReadSinglePolyList()
         case Bg2MeshParser::kVertexArray:
             if (vertexFound)
             {
-                throw std::runtime_error("Bg2: File format exception. duplicate vertex array");
+                //throw std::runtime_error("Bg2: File format exception. duplicate vertex array");
+                return false;
             }
             vertexFound = true;
             mMeshParser.ReadArray(vector);
@@ -257,7 +268,8 @@ void Bg2Reader::ReadSinglePolyList()
         case Bg2MeshParser::kNormalArray:
             if (normalFound)
             {
-                throw std::runtime_error("Bg2: File format exception. duplicate normal array");
+                //throw std::runtime_error("Bg2: File format exception. duplicate normal array");
+                return false;
             }
             normalFound = true;
             mMeshParser.ReadArray(vector);
@@ -270,7 +282,8 @@ void Bg2Reader::ReadSinglePolyList()
         case Bg2MeshParser::kTexCoord0Array:
             if (tex0Found)
             {
-                throw std::runtime_error("Bg2: File format exception. duplicate texcoord0 array");
+                //throw std::runtime_error("Bg2: File format exception. duplicate texcoord0 array");
+                return false;
             }
             tex0Found = true;
             mMeshParser.ReadArray(vector);
@@ -283,7 +296,8 @@ void Bg2Reader::ReadSinglePolyList()
         case Bg2MeshParser::kTexCoord1Array:
             if (tex1Found)
             {
-                throw std::runtime_error("Bg2: File format exception. duplicate texcoord1 array");
+                //throw std::runtime_error("Bg2: File format exception. duplicate texcoord1 array");
+                return false;
             }
             tex1Found = true;
             mMeshParser.ReadArray(vector);
@@ -296,7 +310,8 @@ void Bg2Reader::ReadSinglePolyList()
         case Bg2MeshParser::kTexCoord2Array:
             if (tex2Found)
             {
-                throw std::runtime_error("Bg2: File format exception. duplicate texcoord2 array");
+                //throw std::runtime_error("Bg2: File format exception. duplicate texcoord2 array");
+                return false;
             }
             tex2Found = true;
             mMeshParser.ReadArray(vector);
@@ -309,7 +324,8 @@ void Bg2Reader::ReadSinglePolyList()
         case Bg2MeshParser::kIndexArray:
             if (indexFound)
             {
-                throw std::runtime_error("Bg2: File format exception. duplicate index array");
+                //throw std::runtime_error("Bg2: File format exception. duplicate index array");
+                return false;
             }
             indexFound = true;
             mMeshParser.ReadArray(ivector);
@@ -325,9 +341,11 @@ void Bg2Reader::ReadSinglePolyList()
             done = true;
             break;
         default:
-            throw std::runtime_error("Bg2: File format exception. Unexpected poly list member found");
+            //throw std::runtime_error("Bg2: File format exception. Unexpected poly list member found");
+            return false;
         }
     }
+    return true;
 }
 
 void Bg2Reader::ParseMaterialOverride(const std::string & path)

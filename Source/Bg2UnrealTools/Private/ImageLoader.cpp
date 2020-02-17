@@ -7,10 +7,16 @@
 #include "RenderUtils.h"
 #include "Engine/Texture2D.h"
 
-static IImageWrapperModule & ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(TEXT("ImageWrapper"));
+
+IImageWrapperModule* ImageWrapperModule = nullptr;
 
 UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & ImagePath)
 {
+	if (!ImageWrapperModule)
+	{
+		ImageWrapperModule = &FModuleManager::LoadModuleChecked<IImageWrapperModule>(TEXT("ImageWrapper"));
+	}
+
 	// Check if the file exists first
 	if (!FPaths::FileExists(ImagePath))
 	{
@@ -27,7 +33,7 @@ UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & Im
 	}
 
 	// Detect the image type using the ImageWrapper module
-	EImageFormat ImageFormat = ImageWrapperModule.DetectImageFormat(FileData.GetData(), FileData.Num());
+	EImageFormat ImageFormat = ImageWrapperModule->DetectImageFormat(FileData.GetData(), FileData.Num());
 	if (ImageFormat == EImageFormat::Invalid)
 	{
 		//UIL_LOG(Error, TEXT("Unrecognized image file format: %s"), *ImagePath);
@@ -35,7 +41,7 @@ UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & Im
 	}
 
 	// Create an image wrapper for the detected image format
-	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule->CreateImageWrapper(ImageFormat);
 	if (!ImageWrapper.IsValid())
 	{
 		//UIL_LOG(Error, TEXT("Failed to create image wrapper for file: %s"), *ImagePath);
@@ -153,7 +159,8 @@ UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & 
 				dataInRow0 += priorWidth * 2;
 				dataInRow1 += priorWidth * 2;
 			}
-			Mip = new(NewTexture->PlatformData->Mips) FTexture2DMipMap();
+			Mip = new FTexture2DMipMap();
+			NewTexture->PlatformData->Mips.Add(Mip);
 			Mip->SizeX = mipWidth;
 			Mip->SizeY = mipHeight;
 			Mip->BulkData.Lock(LOCK_READ_WRITE);
