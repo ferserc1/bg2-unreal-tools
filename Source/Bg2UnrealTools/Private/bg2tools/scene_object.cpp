@@ -23,6 +23,22 @@ namespace bg2tools {
 		}
 	}
 
+	bool PolyListData::isValid() {
+		bool status = 
+			vertex.size() == normal.size() && 
+			vertex.size()>0 && 
+			vertex.size() % 3 == 0 &&
+			uv0.size() > 0 &&
+			uv0.size() % 2 == 0 &&
+			vertex.size() / 3 == uv0.size() / 2;
+		if (uv1.size() == 0) {
+			for (auto tc : uv0) {
+				uv1.push_back(tc);
+			}
+		}
+		return status;
+	}
+
 	DrawableData::~DrawableData() {
 		for (auto pl : plists) {
 			delete pl;
@@ -73,7 +89,7 @@ namespace bg2tools {
 			if (currentPolyList) {
 				delete currentPolyList;
 			}
-			return true;
+			return isValid();
 		}
 		else {
 			return false;
@@ -84,5 +100,14 @@ namespace bg2tools {
 		for (auto pl : plists) {
 			pl->applyTransform(trx);
 		}
+	}
+
+	bool DrawableData::isValid() {
+		bool status = true;
+		for (auto pl : plists) {
+			status = pl->isValid() && status;
+			if (!status) break;
+		}
+		return status;
 	}
 }

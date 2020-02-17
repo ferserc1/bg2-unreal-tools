@@ -25,6 +25,11 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 	{
 		return nullptr;
 	}
+	else if (!sceneObject->isValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Invalid scene object found"));
+		return nullptr;
+	}
 
 	result = NewObject<UProceduralMeshComponent>(Outer, UProceduralMeshComponent::StaticClass(), TEXT("bg2 engine mesh"));
 	sceneObject->drawable->applyTransform(sceneObject->worldTransform);

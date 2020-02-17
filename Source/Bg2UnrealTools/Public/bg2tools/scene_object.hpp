@@ -17,8 +17,9 @@ namespace bg2tools {
 		std::vector<float> uv1;
 		std::vector<unsigned int> index;
 
-		// Aplica trx a vértices y normales
 		void applyTransform(const float4x4& trx);
+
+		bool isValid();
 	};
 
 	struct DrawableData {
@@ -28,8 +29,9 @@ namespace bg2tools {
 
 		bool loadDrawable(const std::string & path);
 
-		// Aplica trx a los polyList
 		void applyTransform(const float4x4& trx);
+
+		bool isValid();
 
 		~DrawableData();
 	};
@@ -38,6 +40,13 @@ namespace bg2tools {
 		float4x4 worldTransform = float4x4::Identity();
 		DrawableData * drawable = nullptr;
 		std::string name;
+
+		bool isValid() {
+			if (drawable) {
+				return drawable->isValid();
+			}
+			return true;
+		}
 
 		~SceneObject() {
 			if (drawable) {
