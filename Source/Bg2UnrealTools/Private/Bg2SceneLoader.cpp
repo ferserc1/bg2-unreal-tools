@@ -53,7 +53,7 @@ void ABg2SceneLoader::LoadScene(FString Path, float Scale)
 	}
 }
 
-void ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
+FString ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
 {
 	//FString testPath = "F:/Unreal Projects/Bg2UnrealToolsExample/sample_scene/sample_scene.vitscnj";
 	//LoadScene(testPath, Scale);
@@ -74,10 +74,17 @@ void ABg2SceneLoader::LoadSceneFromFilesystem(float Scale)
 				if (OutFileNames.Num() > 0)
 				{
 					LoadScene(OutFileNames[0], Scale);
+					return OutFileNames[0];
 				}
 			}
 		}
 	}
+	return "";
+}
+
+void ABg2SceneLoader::GetExternalResources(FString Path, TArray<FString>& Result)
+{
+	UBg2Scene::GetExternalResources(Path, Result);
 }
 
 void ABg2SceneLoader::CloseScene()

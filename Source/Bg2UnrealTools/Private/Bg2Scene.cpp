@@ -89,6 +89,23 @@ public:
 	SceneParser(UWorld* World, AActor* RootActor, UMaterial* BaseMaterial, const TSharedPtr<FJsonObject>& Obj, const FString& BasePath, float Scale)
 		:mWorld(World), mRootActor(RootActor), mBaseMaterial(BaseMaterial), mJsonObject(Obj), mBasePath(BasePath), mScale(Scale) {}
 
+	// Use this constructor only to create a parser to read scene resources
+	SceneParser(const TSharedPtr<FJsonObject>& Obj, const FString& BasePath)
+		:mWorld(nullptr), mRootActor(nullptr), mBaseMaterial(nullptr), mJsonObject(Obj), mBasePath(BasePath), mScale(100.0f) {}
+
+	bool GetExternalResources(TArray<FString> & Result)
+	{
+		ParseNodeArray("scene", mJsonObject);
+		for (auto node : mScene.sceneObjects())
+		{
+			if (node->drawable)
+			{
+				Result.Add(node->drawable->modelPath.c_str());
+			}
+		}
+		return true;
+	}
+
 	bool LoadScene()
 	{
 		ParseNodeArray("scene", mJsonObject);
@@ -266,8 +283,34 @@ bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const TShared
 	return parser.LoadScene();
 }
 
-void UBg2Scene::GetExternalResources(const FString & ScenePath, TArray<FString> & Result)
+bool UBg2Scene::GetExternalResources(const FString & ScenePath, TArray<FString> & Result)
 {
+	FString JsonString;
+	if (!FFileHelper::LoadFileToString(JsonString, *ScenePath))
+	{
+		UE_LOG(Bg2Tools, Error, TEXT("Failed to load bg2 engine scene. Nu such file at path %s"), *ScenePath);
+		return false;
+	}
 
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
+
+	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
+	{
+		FString basePath;
+		FString fileName;
+		FString extension;
+		FPaths::Split(ScenePath, basePath, fileName, extension);
+
+		// TODO: Implement this
+		SceneParser parser(JsonObject, basePath);
+		parser.GetExternalResources(Result);
+		return true;
+	}
+	else
+	{
+		UE_LOG(Bg2Tools, Error, TEXT("Failed to load bg2 engine scene. Scene parse error in file %s"), *ScenePath);
+		return false;
+	}
 }
 

@@ -15,5 +15,5 @@ class UBg2Scene : public UObject
 public:
 	static bool Load(AActor * RootActor, UMaterial * BaseMaterial, const FString & ScenePath, float Scale);
 	static bool Load(AActor * RootActor, UMaterial * BaseMaterial, const TSharedPtr<FJsonObject> & SceneJson, const FString & BasePath, float Scale);
-	static void GetExternalResources(const FString & ScenePath, TArray<FString> & Result);
+	static bool GetExternalResources(const FString & ScenePath, TArray<FString> & Result);
 };

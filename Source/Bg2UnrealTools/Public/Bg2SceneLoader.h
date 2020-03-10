@@ -27,7 +27,10 @@ public:
 	void LoadScene(FString Path, float Scale = 100.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
-	void LoadSceneFromFilesystem(float Scale = 100.0f);
+	FString LoadSceneFromFilesystem(float Scale = 100.0f);
+
+	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
+	void GetExternalResources(FString Path, TArray<FString>& Result);
 
 	UFUNCTION(BlueprintCallable, Category = "BG2 Engine")
 	void CloseScene();
