@@ -37,4 +37,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bg2 Library")
 	TMap<FString,FString> Metadata;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bg2 Library")
+	TArray<UBg2LibraryNode*> Children;
 };
