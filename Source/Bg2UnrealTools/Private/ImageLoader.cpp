@@ -6,12 +6,22 @@
 #include "Misc/FileHelper.h"
 #include "RenderUtils.h"
 #include "Engine/Texture2D.h"
+#include "Bg2UnrealTools.h"
 
 
 IImageWrapperModule* ImageWrapperModule = nullptr;
 
 UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & ImagePath)
 {
+	Bg2UnrealToolsImpl * unrealToolsModule = FModuleManager::Get().GetModulePtr<Bg2UnrealToolsImpl>("Bg2UnrealTools");
+	UImageCache * imageCache = unrealToolsModule->GetImageCache(Outer);
+	if (imageCache->FindTexture(ImagePath))
+	{
+		UE_LOG(Bg2Tools, Warning, TEXT("Image present in cache. Skip load"));
+		return imageCache->GetTexture(ImagePath);
+	}
+	UE_LOG(Bg2Tools, Warning, TEXT("Image not present in cache. Loading texture %s"), *ImagePath);
+
 	if (!ImageWrapperModule)
 	{
 		ImageWrapperModule = &FModuleManager::LoadModuleChecked<IImageWrapperModule>(TEXT("ImageWrapper"));
@@ -60,7 +70,9 @@ UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & Im
 
 	// Create the texture and upload the uncompressed image data
 	FString TextureBaseName = TEXT("Texture_") + FPaths::GetBaseFilename(ImagePath);
-	return CreateTexture(Outer, *RawData, ImageWrapper->GetWidth(), ImageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8, FName(*TextureBaseName));
+	auto texture = CreateTexture(Outer, *RawData, ImageWrapper->GetWidth(), ImageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8, FName(*TextureBaseName));
+	imageCache->AddTexture(ImagePath, texture);
+	return texture;
 }
 
 UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & PixelData, int32 InSizeX, int32 InSizeY, EPixelFormat InFormat, FName BaseName)
