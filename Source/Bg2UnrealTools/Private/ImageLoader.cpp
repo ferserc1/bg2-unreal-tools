@@ -59,10 +59,10 @@ UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & Im
 	}
 
 	// Decompress the image data
-	const TArray<uint8> * RawData = nullptr;
+	TArray<uint8> RawData;
 	ImageWrapper->SetCompressed(FileData.GetData(), FileData.Num());
 	ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, RawData);
-	if (RawData == nullptr)
+	if (RawData.Num() == 0)
 	{
 		//UIL_LOG(Error, TEXT("Failed to decompress image file: %s"), *ImagePath);
 		return nullptr;
@@ -70,7 +70,7 @@ UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & Im
 
 	// Create the texture and upload the uncompressed image data
 	FString TextureBaseName = TEXT("Texture_") + FPaths::GetBaseFilename(ImagePath);
-	auto texture = CreateTexture(Outer, *RawData, ImageWrapper->GetWidth(), ImageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8, FName(*TextureBaseName));
+	auto texture = CreateTexture(Outer, RawData, ImageWrapper->GetWidth(), ImageWrapper->GetHeight(), EPixelFormat::PF_B8G8R8A8, FName(*TextureBaseName));
 	imageCache->AddTexture(ImagePath, texture);
 	return texture;
 }
