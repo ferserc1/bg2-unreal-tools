@@ -5,7 +5,7 @@
 #include "ImageLoader.h"
 #include "EngineMinimal.h"
 #include "JsonUtilities.h"
-#include "ConstructorHelpers.h"
+#include "UObject/ConstructorHelpers.h"
 #include "Misc/Paths.h"
 #include "Bg2UnrealTools.h"
 

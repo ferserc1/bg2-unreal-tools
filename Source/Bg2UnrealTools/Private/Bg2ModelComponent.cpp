@@ -8,14 +8,14 @@
 #include "Bg2Material.h"
 #include "Bg2Model.h"
 #include "ImageLoader.h"
-
+#include "Engine.h"
 
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
 #include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
 
 #include "EngineMinimal.h"
 #include "JsonUtilities.h"
-#include "ConstructorHelpers.h"
+#include "UObject/ConstructorHelpers.h"
 #include "Misc/Paths.h"
 
 // Sets default values for this component's properties

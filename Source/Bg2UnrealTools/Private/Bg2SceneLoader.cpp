@@ -5,7 +5,8 @@
 #include "Bg2Scene.h"
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
 #include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
-#include "ConstructorHelpers.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Engine.h"
 
 // Sets default values
 ABg2SceneLoader::ABg2SceneLoader()
