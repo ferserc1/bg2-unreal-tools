@@ -7,7 +7,7 @@
 class UMaterial;
 
 UCLASS(BlueprintType)
-class UBg2Model : public UObject
+class BG2UNREALTOOLS_API UBg2Model : public UObject
 {
 	GENERATED_BODY()
 

@@ -17,7 +17,7 @@ struct FMaterialProperties
 };
 
 UCLASS(BlueprintType)
-class UBg2Material : public UObject
+class BG2UNREALTOOLS_API UBg2Material : public UObject
 {
 	GENERATED_BODY()
 

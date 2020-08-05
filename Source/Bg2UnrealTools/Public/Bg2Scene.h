@@ -8,7 +8,7 @@
 #include "Bg2Scene.generated.h"
 
 UCLASS(BlueprintType)
-class UBg2Scene : public UObject
+class BG2UNREALTOOLS_API UBg2Scene : public UObject
 {
 	GENERATED_BODY()
 
