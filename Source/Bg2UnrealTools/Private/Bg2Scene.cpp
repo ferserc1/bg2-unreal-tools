@@ -95,14 +95,26 @@ public:
 
 	bool GetExternalResources(TArray<FString> & Result)
 	{
-		ParseNodeArray("scene", mJsonObject);
-		for (auto node : mScene.sceneObjects())
-		{
-			if (node->drawable)
+			// Check if the "resources" array exists in the scene data
+		const TArray<TSharedPtr<FJsonValue>>* resources;
+		if (mJsonObject->TryGetArrayField("resources", resources)) {
+			for (int32 i = 0; i < resources->Num(); ++i)
 			{
-				Result.Add(node->drawable->modelPath.c_str());
+				auto resource = (*resources)[i]->AsString();
+				Result.Add(resource);
 			}
 		}
+		else {
+			ParseNodeArray("scene", mJsonObject);
+			for (auto node : mScene.sceneObjects())
+			{
+				if (node->drawable)
+				{
+					Result.Add(node->drawable->modelPath.c_str());
+				}
+			}
+		}
+
 		return true;
 	}
 
@@ -226,7 +238,7 @@ public:
 				drawablePath.Append(".bg2");
 			}
 			else {
-				return;
+				drawablePath.Append(".bg2");
 			}
 
 			auto drw = new bg2tools::DrawableData();
