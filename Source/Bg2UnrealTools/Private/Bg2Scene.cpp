@@ -8,12 +8,15 @@
 #include "JsonUtilities.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Misc/Paths.h"
+#include "HAL/FileManager.h"
 
 #include "Bg2UnrealTools.h"
 #include "Bg2Model.h"
 
 #include "bg2tools/matrix.hpp"
 #include "bg2tools/bg2_scene.hpp"
+
+#include <iostream>
 
 struct ComponentData {
 	FTransform Transform = FTransform::Identity;
@@ -146,6 +149,17 @@ public:
 	void ParseNodeArray(const FString& attrName, const TSharedPtr<FJsonObject>& nodeData)
 	{
 		const TArray<TSharedPtr<FJsonValue>>* nodes;
+		auto debugVar = TCHAR_TO_ANSI(*attrName);
+		std::cout << debugVar << std::endl;
+		if (nodeData->HasField(attrName))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Si que tiene el campo"));
+		}
+
+		for (auto item : nodeData->Values) {
+			UE_LOG(LogTemp, Warning, TEXT("Value: %s"), *item.Key);
+		}
+
 		if (nodeData->TryGetArrayField(attrName, nodes))
 		{
 			for (int32 i = 0; i < nodes->Num(); ++i)
@@ -264,27 +278,31 @@ protected:
 bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const FString & ScenePath, float Scale)
 {
 	FString JsonString;
+	FString AbsolutePath = FPaths::ConvertRelativePathToFull(*ScenePath);
+	AbsolutePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*AbsolutePath);
 
-	if (!FFileHelper::LoadFileToString(JsonString, *ScenePath))
+	if (!FFileHelper::LoadFileToString(JsonString, *AbsolutePath))
 	{
-		UE_LOG(Bg2Tools, Error, TEXT("Failed to load bg2 engine scene. No such file at path : %s"), *ScenePath);
+		UE_LOG(Bg2Tools, Error, TEXT("Failed to load bg2 engine scene. No such file at path : %s"), *AbsolutePath);
 		return false;
 	}
 
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
-	
+
+	UE_LOG(Bg2Tools, Warning, TEXT("Scene data: %s"), *JsonString);
+
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
 	{
 		FString basePath;
 		FString fileName;
 		FString extension;
-		FPaths::Split(ScenePath, basePath, fileName, extension);
+		FPaths::Split(AbsolutePath, basePath, fileName, extension);
 		return Load(RootActor, BaseMaterial, JsonObject, basePath, Scale);
 	}
 	else
 	{
-		UE_LOG(Bg2Tools, Error, TEXT("Failed to load bg2 engine scene. Scene parse error in file %s"), *ScenePath);
+		UE_LOG(Bg2Tools, Error, TEXT("Failed to load bg2 engine scene. Scene parse error in file %s"), *AbsolutePath);
 		return false;
 	}
 }
@@ -316,7 +334,6 @@ bool UBg2Scene::GetExternalResources(const FString & ScenePath, TArray<FString> 
 		FString extension;
 		FPaths::Split(ScenePath, basePath, fileName, extension);
 
-		// TODO: Implement this
 		SceneParser parser(JsonObject, basePath);
 		parser.GetExternalResources(Result);
 		return true;

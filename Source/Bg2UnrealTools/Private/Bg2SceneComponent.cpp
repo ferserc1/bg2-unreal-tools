@@ -1,6 +1,8 @@
 
 #include "Bg2SceneComponent.h"
 
+#include "Bg2UnrealTools.h"
+
 #include "Bg2Scene.h"
 
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
@@ -52,6 +54,7 @@ void UBg2SceneComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 void UBg2SceneComponent::LoadScene(FString modelPath)
 {
+	BG2_LOG(5.0f, FColor::Red, FString::Printf(TEXT("Load Scene: %s"), *modelPath));
 	mScenePathChanged = modelPath != mScenePath;
 	mScenePath = modelPath;
 }

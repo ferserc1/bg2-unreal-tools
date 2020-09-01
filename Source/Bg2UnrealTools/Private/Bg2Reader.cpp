@@ -1,6 +1,7 @@
 
 #include "Bg2Reader.h"
 
+#include "Bg2UnrealTools.h"
 
 //void readVector2(json::Value * val, float * result) {
 //	if (val && (*val)[0] && (*val)[1]) {
@@ -36,6 +37,7 @@ bool Bg2Reader::Load(const std::string & path)
 
     if (mMeshParser.Open(path, Bg2MeshParser::kModeRead))
     {
+        UE_LOG(LogTemp, Warning, TEXT("bg2 model successfully loaded"));
         //try 
         //{
             std::string materialsString;
@@ -62,6 +64,10 @@ bool Bg2Reader::Load(const std::string & path)
         //        mExceptionClosure(e);
         //    }
         //}
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Error reading bg2 model file. Could not open model file."));
     }
     return false;
 }

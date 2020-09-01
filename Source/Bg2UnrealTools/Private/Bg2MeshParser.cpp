@@ -3,6 +3,12 @@
 
 #include <iostream>
 
+#include <stdio.h>
+
+#include "Bg2UnrealTools.h"
+
+#include "Misc/FileHelper.h"
+
 void writeIntegerValue(std::fstream & file, int value, bool swapBytes)
 {
     if (!swapBytes) file.write(reinterpret_cast<const char *>(&value), sizeof(int));
@@ -15,25 +21,63 @@ void writeIntegerValue(std::fstream & file, int value, bool swapBytes)
     }
 }
 
-int readIntegerValue(std::fstream & file, int & value, bool swapBytes)
+//int readIntegerValue(std::fstream & file, int & value, bool swapBytes)
+//{
+//    int readed = 0;
+//    if (!swapBytes)
+//    {
+//        readed = static_cast<int>(file.read(reinterpret_cast<char *>(&value), sizeof(int)).gcount());
+//    }
+//    else
+//    {
+//        union {
+//            int integer;
+//            char byte[4];
+//        } r_value;
+//        file.read(&r_value.byte[3], 1);
+//        file.read(&r_value.byte[2], 1);
+//        file.read(&r_value.byte[1], 1);
+//        readed = static_cast<int>(file.read(&r_value.byte[0], 1).gcount());
+//        value = r_value.integer;
+//    }
+//    return readed;
+//}
+
+int readIntegerValue(const TArray<uint8>& bytes, size_t& currentByte, int& value, bool swapBytes)
 {
     int readed = 0;
+    int availableBytes = bytes.Num() - currentByte;
+    if (availableBytes < 4)
+    {
+        UE_LOG(Bg2Tools, Warning, TEXT("Unexpected read integer value: 4 bytes required, but %d available"), availableBytes);
+        return 0;
+    }
+
+    union
+    {
+        int integer;
+        char byte[4];
+    } r_value;
+
     if (!swapBytes)
     {
-        readed = static_cast<int>(file.read(reinterpret_cast<char *>(&value), sizeof(int)).gcount());
+        r_value.byte[0] = bytes[currentByte];
+        r_value.byte[1] = bytes[currentByte + 1];
+        r_value.byte[2] = bytes[currentByte + 2];
+        r_value.byte[3] = bytes[currentByte + 3];
     }
     else
     {
-        union {
-            int integer;
-            char byte[4];
-        } r_value;
-        file.read(&r_value.byte[3], 1);
-        file.read(&r_value.byte[2], 1);
-        file.read(&r_value.byte[1], 1);
-        readed = static_cast<int>(file.read(&r_value.byte[0], 1).gcount());
-        value = r_value.integer;
+        r_value.byte[3] = bytes[currentByte];
+        r_value.byte[2] = bytes[currentByte + 1];
+        r_value.byte[1] = bytes[currentByte + 2];
+        r_value.byte[0] = bytes[currentByte + 3];
     }
+
+    readed = 4;
+    currentByte += readed;
+    value = r_value.integer;
+
     return readed;
 }
 
@@ -53,25 +97,63 @@ void writeFloatValue(std::fstream & file, float value, bool swapBytes)
     }
 }
 
-int readFloatValue(std::fstream & file, float & value, bool swapBytes)
+//int readFloatValue(std::fstream & file, float & value, bool swapBytes)
+//{
+//    int readed = 0;
+//    if (!swapBytes)
+//    {
+//        readed = static_cast<int>(file.read(reinterpret_cast<char *>(&value), sizeof(float)).gcount());
+//    }
+//    else
+//    {
+//        union {
+//            float floating;
+//            char byte[4];
+//        } r_value;
+//        file.read(&r_value.byte[3], 1);
+//        file.read(&r_value.byte[2], 1);
+//        file.read(&r_value.byte[1], 1);
+//        readed = static_cast<int>(file.read(&r_value.byte[0], 1).gcount());
+//        value = r_value.floating;
+//    }
+//    return readed;
+//}
+
+int readFloatValue(const TArray<uint8>& bytes, size_t& currentByte, float& value, bool swapBytes)
 {
     int readed = 0;
+    int availableBytes = bytes.Num() - currentByte;
+    if (availableBytes < 4)
+    {
+        UE_LOG(Bg2Tools, Warning, TEXT("Unexpected read integer value: 4 bytes required, but %d available"), availableBytes);
+        return 0;
+    }
+
+    union
+    {
+        float floating;
+        unsigned char byte[4];
+    } r_value;
+
     if (!swapBytes)
     {
-        readed = static_cast<int>(file.read(reinterpret_cast<char *>(&value), sizeof(float)).gcount());
+        r_value.byte[0] = bytes[currentByte];
+        r_value.byte[1] = bytes[currentByte + 1];
+        r_value.byte[2] = bytes[currentByte + 2];
+        r_value.byte[3] = bytes[currentByte + 3];
     }
     else
     {
-        union {
-            float floating;
-            char byte[4];
-        } r_value;
-        file.read(&r_value.byte[3], 1);
-        file.read(&r_value.byte[2], 1);
-        file.read(&r_value.byte[1], 1);
-        readed = static_cast<int>(file.read(&r_value.byte[0], 1).gcount());
-        value = r_value.floating;
+        r_value.byte[3] = bytes[currentByte];
+        r_value.byte[2] = bytes[currentByte + 1];
+        r_value.byte[1] = bytes[currentByte + 2];
+        r_value.byte[0] = bytes[currentByte + 3];
     }
+
+    readed = 4;
+    currentByte += readed;
+    value = r_value.floating;
+
     return readed;
 }
 
@@ -109,65 +191,139 @@ void writeIntegerArray(std::fstream & file, const std::vector<unsigned int> iArr
     }
 }
 
-int readFloatArray(std::fstream & file, std::vector<float> & fArray, bool swapBytes)
+//int readFloatArray(std::fstream & file, std::vector<float> & fArray, bool swapBytes)
+//{
+//    int size = 0;
+//    int readed = 0;
+//    readed = readIntegerValue(file, size, swapBytes);
+//    if (readed == 0) return 0;
+//    fArray.reserve(size);
+//    float value;
+//
+//    for (int i=0;i<size;++i)
+//    {
+//        readed += readFloatValue(file, value, swapBytes);
+//        fArray.push_back(value);
+//    }
+//
+//    return readed;
+//}
+
+int readFloatArray(const TArray<uint8>& bytes, size_t& currentByte, std::vector<float>& fArray, bool swapBytes)
 {
     int size = 0;
     int readed = 0;
-    readed = readIntegerValue(file, size, swapBytes);
+    readed = readIntegerValue(bytes, currentByte, size, swapBytes);
     if (readed == 0) return 0;
     fArray.reserve(size);
     float value;
 
-    for (int i=0;i<size;++i)
+    for (int i = 0; i < size; ++i)
     {
-        readed += readFloatValue(file, value, swapBytes);
+        readed += readFloatValue(bytes, currentByte, value, swapBytes);
         fArray.push_back(value);
     }
 
     return readed;
 }
 
-int readIntegerArray(std::fstream & file, std::vector<int> & iArray, bool swapBytes)
+//int readIntegerArray(std::fstream & file, std::vector<int> & iArray, bool swapBytes)
+//{
+//    int size = 0;
+//    int readed = 0;
+//    readed = readIntegerValue(file, size, swapBytes);
+//    if (readed == 0) return 0;
+//    iArray.reserve(size);
+//    int value;
+//
+//    for (int i=0;i<size;++i)
+//    {
+//        readed += readIntegerValue(file, value,swapBytes);
+//        iArray.push_back(value);
+//    }
+//    return readed;
+//}
+
+//int readIntegerArray(std::fstream & file, std::vector<unsigned int> & iArray, bool swapBytes)
+//{
+//    int size = 0;
+//    int readed = 0;
+//    readed = readIntegerValue(file, size, swapBytes);
+//    if (readed == 0) return 0;
+//    iArray.reserve(size);
+//    int value;
+//
+//    for (int i=0;i<size;++i)
+//    {
+//        readed += readIntegerValue(file, value, swapBytes);
+//        iArray.push_back(value);
+//    }
+//
+//    return readed;
+//}
+
+int readIntegerArray(const TArray<uint8>& bytes, size_t& currentBytes, std::vector<int>& iArray, bool swapBytes)
 {
     int size = 0;
     int readed = 0;
-    readed = readIntegerValue(file, size, swapBytes);
+    readed = readIntegerValue(bytes, currentBytes, size, swapBytes);
     if (readed == 0) return 0;
     iArray.reserve(size);
     int value;
 
-    for (int i=0;i<size;++i)
+    for (int i = 0; i < size; ++i)
     {
-        readed += readIntegerValue(file, value,swapBytes);
+        readed += readIntegerValue(bytes, currentBytes, value, swapBytes);
         iArray.push_back(value);
     }
     return readed;
 }
 
-int readIntegerArray(std::fstream & file, std::vector<unsigned int> & iArray, bool swapBytes)
+int readIntegerArray(const TArray<uint8>& bytes, size_t& currentBytes, std::vector<unsigned int>& iArray, bool swapBytes)
 {
     int size = 0;
     int readed = 0;
-    readed = readIntegerValue(file, size, swapBytes);
+    readed = readIntegerValue(bytes, currentBytes, size, swapBytes);
     if (readed == 0) return 0;
     iArray.reserve(size);
     int value;
 
-    for (int i=0;i<size;++i)
+    for (int i = 0; i < size; ++i)
     {
-        readed += readIntegerValue(file, value, swapBytes);
+        readed += readIntegerValue(bytes, currentBytes, value, swapBytes);
         iArray.push_back(value);
     }
 
     return readed;
 }
 
-int readStringValue(std::fstream & file, std::string & str, bool swapBytes)
+//int readStringValue(std::fstream & file, std::string & str, bool swapBytes)
+//{
+//    int stringSize;
+//    int readed = 0;
+//    char * buffer;
+//    readed = readIntegerValue(file, stringSize,swapBytes);
+//
+//    if (readed == 0)
+//    {
+//        return 0;
+//    }
+//
+//    buffer = new char[stringSize + 1];
+//    readed += static_cast<int>(file.read(buffer, stringSize).gcount());
+//    buffer[stringSize] = '\0';
+//    str = buffer;
+//    delete[] buffer;
+//
+//    return readed;
+//}
+
+int readStringValue(const TArray<uint8>& bytes, size_t& currentBytes, std::string& str, bool swapBytes)
 {
     int stringSize;
     int readed = 0;
-    char * buffer;
-    readed = readIntegerValue(file, stringSize,swapBytes);
+    char* buffer;
+    readed = readIntegerValue(bytes, currentBytes, stringSize, swapBytes);
 
     if (readed == 0)
     {
@@ -175,7 +331,21 @@ int readStringValue(std::fstream & file, std::string & str, bool swapBytes)
     }
 
     buffer = new char[stringSize + 1];
-    readed += static_cast<int>(file.read(buffer, stringSize).gcount());
+
+    auto availableBytes = bytes.Num() - currentBytes;
+    if (availableBytes < stringSize)
+    {
+        UE_LOG(Bg2Tools, Warning, TEXT("Unexpected bytes remaining reading bg2 model file. %d required, but %d available"), stringSize, availableBytes);
+        return 0;
+    }
+
+    size_t i = 0;
+    for (i = 0; i < stringSize; ++i) {
+        buffer[i] = static_cast<char>(bytes[currentBytes]);
+        ++currentBytes;
+        ++readed;
+    }
+    
     buffer[stringSize] = '\0';
     str = buffer;
     delete[] buffer;
@@ -197,11 +367,36 @@ Bg2MeshParser::~Bg2MeshParser()
 bool Bg2MeshParser::Open(const std::string &path, OpenMode mode)
 {
     Close();
-    mStream.open(path,((mode==OpenMode::kModeRead) ? std::ios::in:std::ios::out) | std::ios::binary );
-    if (mStream.is_open())
+    if (mode==OpenMode::kModeRead)
     {
-        mMode = mode;
+        FString modelPath(path.c_str());
+        if (FFileHelper::LoadFileToArray(mBytes, *modelPath))
+        {
+            UE_LOG(Bg2Tools, Display, TEXT("Model file is open from path %s"), *modelPath);
+            UE_LOG(Bg2Tools, Display, TEXT("%d bytes readed"), mBytes.Num());
+            mMode = mode;
+        }
+        else
+        {
+            UE_LOG(Bg2Tools, Error, TEXT("Error loading 3D model file from path %s"), *modelPath);
+            return false;
+        }
     }
+    else
+    {
+        mStream.open(path, std::ios::out | std::ios::binary);
+        if (mStream.is_open())
+        {
+            UE_LOG(Bg2Tools, Display, TEXT("Bg2 model file is open"));
+            mMode = mode;
+        }
+        else
+        {
+            char * err = std::strerror(errno);
+            UE_LOG(Bg2Tools, Error, TEXT("Error opening bg2 model file stream: %"), *FString(err));
+        }
+    }
+
     return mMode!=kModeClosed;
 }
 
@@ -211,7 +406,11 @@ void Bg2MeshParser::Close()
     {
         mStream.close();
     }
+    else if (mBytes.Num() == 0) {
+        mBytes.Empty();
+    }
     mMode = kModeClosed;
+    mCurrentByte = 0;
 }
 
 bool Bg2MeshParser::WriteByte(unsigned char byte)
@@ -306,8 +505,15 @@ bool Bg2MeshParser::ReadByte(unsigned char & byte)
     {
         return false;
     }
+    if (mCurrentByte >= mBytes.Num())
+    {
+        UE_LOG(Bg2Tools, Warning, TEXT("Error reading byte"));
+        return false;
+    }
 
-    return mStream.read(reinterpret_cast<char*>(&byte), 1).gcount()==1;
+    byte = static_cast<unsigned char>(mBytes[mCurrentByte]);
+    ++mCurrentByte;
+    return true;
 }
 
 bool Bg2MeshParser::ReadBlock(Bg2MeshParser::BlockType & b) 
@@ -327,7 +533,7 @@ bool Bg2MeshParser::ReadInteger(int & value)
         return false;
     }
 
-    return readIntegerValue(mStream, value, mSwapBytes)!=0;
+    return readIntegerValue(mBytes, mCurrentByte, value, mSwapBytes)!=0;
 }
 
 bool Bg2MeshParser::ReadFloat(float & value) 
@@ -337,7 +543,7 @@ bool Bg2MeshParser::ReadFloat(float & value)
         return false;
     }
 
-    return readFloatValue(mStream, value, mSwapBytes)!=0;
+    return readFloatValue(mBytes, mCurrentByte, value, mSwapBytes)!=0;
 }
 
 bool Bg2MeshParser::ReadString(std::string & str)
@@ -347,7 +553,7 @@ bool Bg2MeshParser::ReadString(std::string & str)
         return false;
     }
 
-    return readStringValue(mStream, str, mSwapBytes)!=0;
+    return readStringValue(mBytes, mCurrentByte, str, mSwapBytes)!=0;
 }
 
 bool Bg2MeshParser::ReadArray(std::vector<float> & array)
@@ -357,7 +563,7 @@ bool Bg2MeshParser::ReadArray(std::vector<float> & array)
         return false;
     }
 
-    return readFloatArray(mStream,array, mSwapBytes)!=0;
+    return readFloatArray(mBytes, mCurrentByte, array, mSwapBytes)!=0;
 }
 
 bool Bg2MeshParser::ReadArray(std::vector<int> & array)
@@ -367,7 +573,7 @@ bool Bg2MeshParser::ReadArray(std::vector<int> & array)
         return false;
     }
 
-    return readIntegerArray(mStream, array, mSwapBytes)!=0;
+    return readIntegerArray(mBytes, mCurrentByte, array, mSwapBytes)!=0;
 }
 
 bool Bg2MeshParser::ReadArray(std::vector<unsigned int> & array)
@@ -377,7 +583,7 @@ bool Bg2MeshParser::ReadArray(std::vector<unsigned int> & array)
         return false;
     }
 
-    return readIntegerArray(mStream, array, mSwapBytes)!=0;
+    return readIntegerArray(mBytes, mCurrentByte, array, mSwapBytes)!=0;
 }
 
 bool Bg2MeshParser::IsBigEndian()
@@ -418,5 +624,12 @@ void Bg2MeshParser::SetLittleEndian()
 
 void Bg2MeshParser::SeekForward(int bytes) 
 {
-    mStream.seekg(bytes, std::ios::cur);
+    if (mBytes.Num() > 0)
+    {
+        mCurrentByte += bytes;
+    }
+    else
+    {
+        mStream.seekg(bytes, std::ios::cur);
+    }
 }

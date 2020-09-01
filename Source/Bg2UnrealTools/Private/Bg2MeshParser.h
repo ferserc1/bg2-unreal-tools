@@ -4,6 +4,8 @@
 #include <vector>
 #include <fstream>
 
+#include "Bg2UnrealTools.h"
+
 class Bg2MeshParser
 {
 public:
@@ -69,7 +71,16 @@ public:
     bool IsLittleEndian();
 
 protected:
+    // This fstream is used only for write operations
     std::fstream mStream;
+
+    // The byte array is used in read operations because fstream and FILE APIs does not
+    // work on Android devices, due to permissions
+    TArray<uint8> mBytes;
+    size_t mCurrentByte;
+
     OpenMode mMode;
     bool mSwapBytes;
+
+    
 };
