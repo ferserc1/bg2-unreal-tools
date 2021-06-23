@@ -124,6 +124,7 @@ public:
 			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, node);
 			if (mesh)
 			{
+				nodeActor->SetActorEnableCollision(false);
 				mesh->SetupAttachment(nodeActor->GetRootComponent());
 				mesh->RegisterComponent();
 			}

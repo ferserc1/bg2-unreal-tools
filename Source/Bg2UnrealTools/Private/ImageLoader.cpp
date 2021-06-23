@@ -49,10 +49,10 @@ UTexture2D * UImageLoader::LoadImageFromDisk(UObject * Outer, const FString & Im
 	}
 
 	// Decompress the image data
-	const TArray<uint8> * RawData = nullptr;
+	const TArray<uint8>* RawData;;
 	ImageWrapper->SetCompressed(FileData.GetData(), FileData.Num());
-	ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, RawData);
-	if (RawData == nullptr)
+	
+	if (!ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, RawData))
 	{
 		//UIL_LOG(Error, TEXT("Failed to decompress image file: %s"), *ImagePath);
 		return nullptr;
