@@ -203,7 +203,7 @@ UMaterialInstanceDynamic * UBg2Material::LoadMaterialWithJsonObject(UMaterial * 
 	UMaterialInstanceDynamic * result = nullptr;
 
 	result = UMaterialInstanceDynamic::Create(BaseMaterial, Outer);
-	MaterialParser parser(BaseMaterial, JsonObject, BasePath);
+	MaterialParser parser(Outer, JsonObject, BasePath);
 	FString matName = "-";
 	if (parser.GetString("name"))
 	{

@@ -124,6 +124,7 @@ public:
 			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, node);
 			if (mesh)
 			{
+				nodeActor->SetActorEnableCollision(false);
 				mesh->SetupAttachment(nodeActor->GetRootComponent());
 				mesh->RegisterComponent();
 			}
@@ -279,8 +280,6 @@ bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const FString
 
 bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const TSharedPtr<FJsonObject> & SceneJson, const FString & BasePath, float Scale)
 {
-	auto module = FModuleManager::Get().GetModulePtr<Bg2UnrealToolsImpl>("Bg2UnrealTools");
-	module->ClearImageCache();
 	SceneParser parser(RootActor->GetWorld(), RootActor, BaseMaterial, SceneJson, BasePath, Scale);
 	return parser.LoadScene();
 }
