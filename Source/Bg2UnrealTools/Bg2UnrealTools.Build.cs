@@ -13,6 +13,6 @@ public class Bg2UnrealTools : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "SlateCore", "Json", "JsonUtilities", "ProceduralMeshComponent" });
 
-        PrivateDependencyModuleNames.AddRange(new string[] { "ImageWrapper", "RenderCore" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "ImageWrapper", "RenderCore", "RHI" });
     }
 }
