@@ -50,14 +50,20 @@ namespace bg2tools {
 			_currentDrawable = drw;
 		}
 
+		inline void setCurrentTeleportBox(const float3& size) {
+			_currentTeleportBox = size;
+		}
+
 		inline void tryAddNode() {
 			if (_currentDrawable) {
 				auto so = new SceneObject();
 				so->worldTransform = _currentMatrix;
 				so->drawable = _currentDrawable;
+				so->teleportBox = _currentTeleportBox;
 				so->name = _currentName;
 				_sceneObjects.push_back(so);
 				_currentDrawable = nullptr;
+				_currentTeleportBox = float3(0.f, 0.f, 0.f);
 			}
 		}
 
@@ -80,6 +86,7 @@ namespace bg2tools {
 		DrawableData * _currentDrawable = nullptr;
 		std::vector<float4x4> _matrixStack;
 		std::vector<SceneObject*> _sceneObjects;
+		float3 _currentTeleportBox;
 	};
 }
 

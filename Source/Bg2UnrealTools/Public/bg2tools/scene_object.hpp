@@ -39,6 +39,7 @@ namespace bg2tools {
 	struct SceneObject {
 		float4x4 worldTransform = float4x4::Identity();
 		DrawableData * drawable = nullptr;
+		float3 teleportBox = float3(0.f, 0.f, 0.f);
 		std::string name;
 
 		bool isValid() {

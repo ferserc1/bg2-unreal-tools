@@ -8,6 +8,7 @@
 #include "JsonUtilities.h"
 #include "ConstructorHelpers.h"
 #include "Misc/Paths.h"
+#include "Engine.h"
 
 #include "Bg2UnrealTools.h"
 #include "Bg2Model.h"
@@ -187,6 +188,9 @@ public:
 		{
 			ParseDrawable(componentData);
 		}
+		else if (compType == "Collider") {
+			ParseCollider(componentData);
+		}
 	}
 
 	void ParseTransform(const TSharedPtr<FJsonObject>& transformData)
@@ -237,6 +241,31 @@ public:
 		}
 	}
 
+	void ParseCollider(const TSharedPtr<FJsonObject>& colliderData)
+	{
+		FString colliderShape;
+		if (colliderData->TryGetStringField("shape", colliderShape))
+		{
+			if (colliderShape == "BoxCollider")
+			{
+				const TArray<TSharedPtr<FJsonValue>>* size;
+				if (colliderData->TryGetArrayField("size", size) && size->Num() == 3)
+				{
+					bg2tools::float3 sizeVector(
+						static_cast<float>((*size)[0]->AsNumber()),
+						static_cast<float>((*size)[1]->AsNumber()),
+						static_cast<float>((*size)[2]->AsNumber())
+					);
+					mScene.setCurrentTeleportBox(sizeVector);
+				}
+			}
+			else
+			{
+				// Log: only box collider are supported as teleport areas
+			}
+		}
+	}
+
 protected:
 	UWorld* mWorld;
 	AActor* mRootActor;
@@ -281,6 +310,7 @@ bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const TShared
 {
 	auto module = FModuleManager::Get().GetModulePtr<Bg2UnrealToolsImpl>("Bg2UnrealTools");
 	module->ClearImageCache();
+
 	SceneParser parser(RootActor->GetWorld(), RootActor, BaseMaterial, SceneJson, BasePath, Scale);
 	return parser.LoadScene();
 }
