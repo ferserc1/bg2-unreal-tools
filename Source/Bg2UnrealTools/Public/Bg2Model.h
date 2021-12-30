@@ -12,7 +12,7 @@ class BG2UNREALTOOLS_API UBg2Model : public UObject
 	GENERATED_BODY()
 
 public:
-	static UProceduralMeshComponent* Load(UObject* Outer, UMaterial* BaseMaterial, bg2tools::SceneObject* sceneObject);
-	static UProceduralMeshComponent * Load(UObject * Outer, UMaterial * BaseMaterial, const FString & ModelPath, float Scale);
+	static UProceduralMeshComponent* Load(UObject* Outer, UMaterial* BaseMaterial, bg2tools::SceneObject* sceneObject, FVector& origin, FVector& size);
+	static UProceduralMeshComponent * Load(UObject * Outer, UMaterial * BaseMaterial, const FString & ModelPath, float Scale, FVector & origin, FVector & size);
 	static void GetExternalResources(const FString & ModelPath, TArray<FString> & Result);
 };

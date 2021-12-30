@@ -51,6 +51,11 @@ namespace bg2tools {
             return _v[0] >= left && _v[0] <= left + width && _v[1] >= top && _v[1] <= top + height;
         }
         
+        inline bool isZero() const { 
+            return std::abs(_v[0]) < std::numeric_limits<float>::epsilon() &&
+                   std::abs(_v[1]) < std::numeric_limits<float>::epsilon();
+        }
+
     protected:
         T _v[2] = { static_cast<T>(0), static_cast<T>(0) };
     };
@@ -95,7 +100,7 @@ namespace bg2tools {
         return std::isinf(static_cast<double>(v[0])) || std::isinf(static_cast<double>(v[1]));
     }
     template <class T> inline bool iszero(const vec2<T> & v) {
-        return v[0] == 0 && v[1] == 0;
+        return v.isZero();
     }
     template <class T> inline bool isvalid(const vec2<T> & v) {
         return !isnan(v) && !isinf(v);
@@ -168,6 +173,12 @@ namespace bg2tools {
 		inline const T& height() const { return _v[1]; }
 		inline T& depth() { return _v[2]; }
 		inline const T& depth() const { return _v[2]; }
+
+        inline bool isZero() const {
+            return std::abs(_v[0]) < std::numeric_limits<float>::epsilon() &&
+                   std::abs(_v[1]) < std::numeric_limits<float>::epsilon() &&
+                   std::abs(_v[2]) < std::numeric_limits<float>::epsilon();
+        }
         
     protected:
         T _v[3] = { static_cast<T>(0), static_cast<T>(0), static_cast<T>(0) };
@@ -213,7 +224,7 @@ namespace bg2tools {
         return std::isinf(static_cast<double>(v[0])) || std::isinf(static_cast<double>(v[1])) || std::isinf(static_cast<double>(v[2]));
     }
     template <class T> inline bool iszero(const vec3<T> & v) {
-        return v[0] == 0 && v[1] == 0 && v[2] == 0;
+        return v.isZero();
     }
     template <class T> inline bool isvalid(const vec3<T> & v) {
         return !isnan(v) && !isinf(v);
@@ -312,6 +323,13 @@ namespace bg2tools {
 			_v[3] = static_cast<T>(color) / static_cast<T>(255);
 		}
 
+        inline bool isZero() const {
+            return std::abs(_v[0]) < std::numeric_limits<float>::epsilon() &&
+                   std::abs(_v[1]) < std::numeric_limits<float>::epsilon() &&
+                   std::abs(_v[2]) < std::numeric_limits<float>::epsilon() &&
+                   std::abs(_v[3]) < std::numeric_limits<float>::epsilon();
+        }
+
     protected:
         T _v[4] = { static_cast<T>(0), static_cast<T>(0), static_cast<T>(0), static_cast<T>(0) };
     };
@@ -356,7 +374,7 @@ namespace bg2tools {
         return std::isinf(static_cast<double>(v[0])) || std::isinf(static_cast<double>(v[1])) || std::isinf(static_cast<double>(v[2])) || std::isinf(static_cast<double>(v[3]));
     }
     template <class T> inline bool iszero(const vec4<T> & v) {
-        return v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0;
+        return v.isZero();
     }
     template <class T> inline bool isvalid(const vec4<T> & v) {
         return !isnan(v) && !isinf(v);

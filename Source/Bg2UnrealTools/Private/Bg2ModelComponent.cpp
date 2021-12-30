@@ -103,7 +103,9 @@ void UBg2ModelComponent::LoadModelFromFilesystem()
 
 bool UBg2ModelComponent::LoadModelMesh()
 {
-	auto bg2Mesh = UBg2Model::Load(this, mBaseMaterial, mModelPath, Scale);
+	FVector origin;
+	FVector size;
+	auto bg2Mesh = UBg2Model::Load(this, mBaseMaterial, mModelPath, Scale, origin, size);
 
 	TArray<FString> TestResources;
 	UBg2Model::GetExternalResources(mModelPath, TestResources);

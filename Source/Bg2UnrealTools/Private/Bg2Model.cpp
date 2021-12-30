@@ -15,11 +15,18 @@
 
 #include <map>
 
-UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMaterial, bg2tools::SceneObject* sceneObject)
+UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMaterial, bg2tools::SceneObject* sceneObject, FVector& origin, FVector& size)
 {
 	UProceduralMeshComponent* result = nullptr;
 	std::map<FString, int32> materialIndexes;
 	int32 currentMeshIndex = 0;
+	origin = FVector(0.f, 0.f, 0.f);
+	float minX = std::numeric_limits<float>::max();
+	float maxX = std::numeric_limits<float>::min();
+	float minY = std::numeric_limits<float>::max();
+	float maxY = std::numeric_limits<float>::min();
+	float minZ = std::numeric_limits<float>::max();
+	float maxZ = std::numeric_limits<float>::min();
 
 	if (!sceneObject)
 	{
@@ -52,6 +59,25 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 			auto ny = pl->normal[i3 + 1];
 			auto nz = pl->normal[i3 + 2];
 
+			if (minX > x) {
+				minX = x;
+			}
+			if (maxX < x) {
+				maxX = x;
+			}
+			if (minY > y) {
+				minY = y;
+			}
+			if (maxY < y) {
+				maxY = y;
+			}
+			if (minZ > z) {
+				minZ = z;
+			}
+			if (maxZ < z) {
+				maxZ = z;
+			}
+
 			auto vertex = FVector(x, z, y);
 			auto normal = -1.0 * FVector(nx, nz, ny);
 
@@ -72,6 +98,14 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 		result->CreateMeshSection_LinearColor(currentMeshIndex, vertices, Triangles, normals, UV0, UV1, UV0, UV0, TArray<FLinearColor>(), TArray<FProcMeshTangent>(), true);
 		++currentMeshIndex;
 	}
+
+	// Calculate size and origin
+	size.X = maxX - minX;
+	size.Z = maxY - minY;
+	size.Y = maxZ - minZ;
+	origin.X = size.X / 2.f + minX;
+	origin.Y = size.Y / 2.f + minZ;
+	origin.Z = size.Z / 2.f + minY;
 
 	// Load materials
 	FString JsonString = "{\"Materials\":";
@@ -112,7 +146,7 @@ UProceduralMeshComponent * UBg2Model::Load(UObject* Outer, UMaterial* BaseMateri
 	return result;
 }
 
-UProceduralMeshComponent * UBg2Model::Load(UObject * Outer, UMaterial * BaseMaterial, const FString & ModelPath, float Scale)
+UProceduralMeshComponent * UBg2Model::Load(UObject * Outer, UMaterial * BaseMaterial, const FString & ModelPath, float Scale, FVector& origin, FVector& size)
 {
 	bg2tools::SceneObject sceneObject;
 	sceneObject.drawable = new bg2tools::DrawableData;
@@ -121,7 +155,7 @@ UProceduralMeshComponent * UBg2Model::Load(UObject * Outer, UMaterial * BaseMate
 		sceneObject.worldTransform
 			.scale({ Scale, Scale, Scale })
 			.rotate(bg2tools::radians(90.0f), 1, 0, 0);
-		return Load(Outer, BaseMaterial, &sceneObject);
+		return Load(Outer, BaseMaterial, &sceneObject, origin, size);
 	}
 	else {
 		// ERROR

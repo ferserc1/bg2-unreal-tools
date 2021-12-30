@@ -122,9 +122,23 @@ public:
 				bg2tools::float4x4::Scale({ mScale, mScale, mScale }) *
 				node->worldTransform;
 
-			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, node);
+			FVector origin;
+			FVector size;
+			auto mesh = UBg2Model::Load(nodeActor, mBaseMaterial, node, origin, size);
 			if (mesh)
 			{
+				if (!node->teleportBox.isZero())
+				{
+					// Add collider based on the geometry data
+					UBoxComponent* collider = NewObject<UBoxComponent>(nodeActor);
+					collider->SetWorldLocation(origin);
+					collider->SetBoxExtent(size);
+					collider->SetupAttachment(nodeActor->GetRootComponent());
+					collider->RegisterComponent();
+				}
+				else {
+					mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				}
 				mesh->SetupAttachment(nodeActor->GetRootComponent());
 				mesh->RegisterComponent();
 			}
