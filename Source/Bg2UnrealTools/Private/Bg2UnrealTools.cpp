@@ -1,7 +1,8 @@
 
-#include "Bg2UnrealToolsPrivatePCH.h"
-
 #include "Bg2UnrealTools.h"
+
+
+#include "Bg2UnrealToolsPrivatePCH.h"
 
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"

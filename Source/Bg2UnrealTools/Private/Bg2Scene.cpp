@@ -86,12 +86,12 @@ struct ComponentData {
 
 class SceneParser {
 public:
-	SceneParser(UWorld* World, AActor* RootActor, UMaterial* BaseMaterial, const TSharedPtr<FJsonObject>& Obj, const FString& BasePath, float Scale)
-		:mWorld(World), mRootActor(RootActor), mBaseMaterial(BaseMaterial), mJsonObject(Obj), mBasePath(BasePath), mScale(Scale) {}
+	SceneParser(UWorld* World, AActor* RootActor, UMaterial* BaseMaterial, const TSharedPtr<FJsonObject>& Obj, const FString& BasePath, float Scale, FVector Offset = FVector{ 0.f, 0.f, 0.f })
+		:mWorld(World), mRootActor(RootActor), mBaseMaterial(BaseMaterial), mJsonObject(Obj), mBasePath(BasePath), mScale(Scale), mOffset(Offset) {}
 
 	// Use this constructor only to create a parser to read scene resources
 	SceneParser(const TSharedPtr<FJsonObject>& Obj, const FString& BasePath)
-		:mWorld(nullptr), mRootActor(nullptr), mBaseMaterial(nullptr), mJsonObject(Obj), mBasePath(BasePath), mScale(100.0f) {}
+		:mWorld(nullptr), mRootActor(nullptr), mBaseMaterial(nullptr), mJsonObject(Obj), mBasePath(BasePath), mScale(100.0f), mOffset(FVector{0.f, 0.f, 0.f}) {}
 
 	bool GetExternalResources(TArray<FString> & Result)
 	{
@@ -118,6 +118,7 @@ public:
 
 			node->worldTransform = 
 				//bg2tools::float4x4::Rotation(bg2tools::radians(90.0f), 1, 0, 0) *
+				bg2tools::float4x4::Translation({ mOffset.X, mOffset.Z, mOffset.Y }) *
 				bg2tools::float4x4::Scale({ mScale, mScale, mScale }) *
 				node->worldTransform;
 
@@ -245,12 +246,13 @@ protected:
 	const TSharedPtr<FJsonObject> mJsonObject;
 	FString mBasePath;
 	float mScale;
+	FVector mOffset;
 
 	bg2tools::Bg2Scene mScene;
 };
 
 
-bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const FString & ScenePath, float Scale)
+bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const FString & ScenePath, float Scale, FVector Offset)
 {
 	FString JsonString;
 
@@ -269,7 +271,7 @@ bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const FString
 		FString fileName;
 		FString extension;
 		FPaths::Split(ScenePath, basePath, fileName, extension);
-		return Load(RootActor, BaseMaterial, JsonObject, basePath, Scale);
+		return Load(RootActor, BaseMaterial, JsonObject, basePath, Scale, Offset);
 	}
 	else
 	{
@@ -278,9 +280,9 @@ bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const FString
 	}
 }
 
-bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const TSharedPtr<FJsonObject> & SceneJson, const FString & BasePath, float Scale)
+bool UBg2Scene::Load(AActor * RootActor, UMaterial * BaseMaterial, const TSharedPtr<FJsonObject> & SceneJson, const FString & BasePath, float Scale, FVector Offset)
 {
-	SceneParser parser(RootActor->GetWorld(), RootActor, BaseMaterial, SceneJson, BasePath, Scale);
+	SceneParser parser(RootActor->GetWorld(), RootActor, BaseMaterial, SceneJson, BasePath, Scale, Offset);
 	return parser.LoadScene();
 }
 
