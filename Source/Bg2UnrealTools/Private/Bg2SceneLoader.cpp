@@ -45,7 +45,8 @@ void ABg2SceneLoader::LoadScene(FString Path, float Scale)
 {
 	if (BaseMaterial)
 	{
-		UBg2Scene::Load(this, BaseMaterial, Path, Scale);
+		FVector Offset = GetActorLocation();
+		UBg2Scene::Load(this, BaseMaterial, Path, Scale, Offset);
 	}
 	else
 	{
