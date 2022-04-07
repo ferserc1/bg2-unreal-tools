@@ -86,12 +86,12 @@ void UBg2ModelComponent::LoadModelFromFilesystem()
 			FString DefaultPath = FPaths::ProjectContentDir();
 			FString FileTypes = "bg2 files|*.bg2;vwglb files|*.vwglb";
 			TArray<FString> OutFileNames;
-			void * ParentWindowHandle = GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle();
+			//void * ParentWindowHandle = GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle();
 			IDesktopPlatform * DesktopPlatform = FDesktopPlatformModule::Get();
 			if (DesktopPlatform)
 			{
 				uint32 SelectionFlag = 0;
-				DesktopPlatform->OpenFileDialog(ParentWindowHandle, DialogTitle, DefaultPath, FString(""), FileTypes, SelectionFlag, OutFileNames);
+				DesktopPlatform->OpenFileDialog(nullptr, DialogTitle, DefaultPath, FString(""), FileTypes, SelectionFlag, OutFileNames);
 				if (OutFileNames.Num() > 0)
 				{
 					LoadModel(OutFileNames[0]);
