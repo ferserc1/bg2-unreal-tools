@@ -118,7 +118,7 @@ public:
 
 			node->worldTransform = 
 				//bg2tools::float4x4::Rotation(bg2tools::radians(90.0f), 1, 0, 0) *
-				bg2tools::float4x4::Translation({ mOffset.X, mOffset.Z, mOffset.Y }) *
+				bg2tools::float4x4::Translation({ static_cast<float>(mOffset.X), static_cast<float>(mOffset.Z), static_cast<float>(mOffset.Y) }) *
 				bg2tools::float4x4::Scale({ mScale, mScale, mScale }) *
 				node->worldTransform;
 

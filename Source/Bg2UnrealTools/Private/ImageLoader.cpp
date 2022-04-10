@@ -90,17 +90,18 @@ UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & 
 	FName TextureName = MakeUniqueObjectName(Outer, UTexture2D::StaticClass(), BaseName);
 	UTexture2D * NewTexture = NewObject<UTexture2D>(Outer, TextureName, RF_Transient);
 
-	NewTexture->PlatformData = new FTexturePlatformData();
-	NewTexture->PlatformData->SizeX = InSizeX;
-	NewTexture->PlatformData->SizeY = InSizeY;
-	NewTexture->PlatformData->PixelFormat = InFormat;
+	auto platformData = new FTexturePlatformData();
+	platformData->SizeX = InSizeX;
+	platformData->SizeY = InSizeY;
+	platformData->PixelFormat = InFormat;
+	NewTexture->SetPlatformData(platformData);
 	NewTexture->Filter = TF_Trilinear;
 
 	// Allocate first mipmap and upload the pixel data
 	int32 NumBlocksX = InSizeX / GPixelFormats[InFormat].BlockSizeX;
 	int32 NumBlocksY = InSizeY / GPixelFormats[InFormat].BlockSizeY;
 	FTexture2DMipMap * Mip = new FTexture2DMipMap();
-	NewTexture->PlatformData->Mips.Add(Mip);
+	platformData->Mips.Add(Mip);
 	Mip->SizeX = InSizeX;
 	Mip->SizeY = InSizeY;
 	Mip->BulkData.Lock(LOCK_READ_WRITE);
@@ -113,9 +114,9 @@ UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & 
 		TArray<uint8_t> _mipRGBAs;
 		TArray<uint8_t> _mipRGBBs;
 
-		auto* priorData = (const uint8*)NewTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-		int priorWidth = NewTexture->PlatformData->Mips[0].SizeX;
-		int priorHeight = NewTexture->PlatformData->Mips[0].SizeY;
+		auto* priorData = (const uint8*)platformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+		int priorWidth = platformData->Mips[0].SizeX;
+		int priorHeight = platformData->Mips[0].SizeY;
 		const int BYTES_PER_PIXEL = 4;
 
 		while (mipsToAdd > 0)
@@ -172,7 +173,7 @@ UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & 
 				dataInRow1 += priorWidth * 2;
 			}
 			Mip = new FTexture2DMipMap();
-			NewTexture->PlatformData->Mips.Add(Mip);
+			platformData->Mips.Add(Mip);
 			Mip->SizeX = mipWidth;
 			Mip->SizeY = mipHeight;
 			Mip->BulkData.Lock(LOCK_READ_WRITE);
@@ -185,7 +186,7 @@ UTexture2D * UImageLoader::CreateTexture(UObject * Outer, const TArray<uint8> & 
 			priorHeight = mipHeight;
 			--mipsToAdd;
 		}
-		NewTexture->PlatformData->Mips[0].BulkData.Unlock();
+		platformData->Mips[0].BulkData.Unlock();
 
 	NewTexture->UpdateResource();
 	return NewTexture;
