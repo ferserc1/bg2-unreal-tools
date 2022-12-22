@@ -245,3 +245,8 @@ For a quick test:
 - Drag the BP_Bg2SceneLoader instance to the level blueprint.
 - Add an action from the blueprint. You can use `bg2 engine` as filter string.
 
+- LoadModel: loads a 3D model in bg2 or vwglb format from a path in the file system - LoadScene: loads a scene in vitscn format from a path in the file system 
+- LoadModelFromFilesystem: loads a 3D model that is requested to the user through a file selection dialog box.
+- LoadSceneFromFilesystem: loads a scene that is requested to the user through a file selection dialog box.
+- GetExternalResources: returns external resources of a scene.
+
