@@ -91,3 +91,157 @@ Checkout this repository (or add a reference to the repository) inside the `Plug
     }
 ]
 ```
+
+## C++ API
+
+### UBg2Scene
+
+It contains static functions to load `.vitscnj` scenes and to obtain the list of files associated to the scene.
+
+**Load**
+
+```c++
+static bool Load(
+    AActor* RootActor, 
+    UMaterial* BaseMaterial, 
+    const FString& ScenePath, 
+    float Scale, 
+    FVector Offset = FVector{ 0.f, 0.f, 0.f }
+)
+```
+
+Loads a scene from a path to the local file system.
+
+- RootActor: is an actor belonging to the scene, which will be used to place the root node of the scene loaded from the `vitscnj` file.
+- BaseMaterial: see `BaseMaterial` section below.
+- ScenePath: the scene path in the file system.
+- Scale: the scale factor. Since bg2 engine works in meters and Unreal units correspond to centimeters, if the scene has the correct measurements, a value of 100.0f should work fine.
+- Offset: The center of the scene is the center of the `RootActor` specified in the first parameter. The offset parameter allows you to translate the scene center to other position.
+
+You can use an actor class to load the scene. You will probably need to use the constructor class to load the base material object (see BaseMaterial section in this document). In the following example, we are using the current actor object to load an scene. Since the actor used as parameter is `this`, the scene center will be placed in the same position as the current actor.
+
+```c++
+void ABg2SceneLoader::LoadScene(FString Path, float Scale)
+{
+	if (BaseMaterial)
+	{
+		FVector Offset = GetActorLocation();
+		UBg2Scene::Load(this, BaseMaterial, Path, 100.0);
+	}
+	// else: error, the base material is not loaded
+}
+```
+
+**GetExternalResources**
+
+```c++
+static bool GetExternalResources(
+    const FString & ScenePath, 
+    TArray<FString> & Result
+)
+```
+
+Returns an array of strings containing the paths to the dependency files that are needed for the scene. It only returns the directly dependent files, keep in mind that 3D models may also have external dependencies associated with them in the form of texture images. To get the dependencies of the 3D model files, you can use the `GetExternalResources` function of the `Bg2Model` class.
+
+- ScenePath: the scene path in the file system.
+- Result: array with the directly dependent files of the scene.
+
+
+
+### UBg2Model
+
+**Load** 
+
+```c++
+static UProceduralMeshComponent* Load(
+    UObject* Outer, 
+    UMaterial* BaseMaterial, 
+    const FString & ModelPath,
+    float Scale
+)
+```
+
+Loads a 3D model in bg2 or vwglb format, generating a UProceduralMeshComponent.
+
+- Outer: the outer object. For more information, check the documentation about the [Unreal Engine memory management system](https://unrealcommunity.wiki/memory-management-6rlf3v4i).
+- BaseMaterial: Check the `BaseMaterial` section in this document.
+- ModelPath: the bg2 model path in the file system.
+- Scale: the scale factor. Since bg2 engine works in meters and Unreal Engine units correspond to centimeters, if the model has the correct measurement, a value of 100 should work fine.
+
+You can add the loaded procedural mesh component to any actor in the scene. Note that you'll probably need to use the constructor function to load the base material object (see Base Material section in this document).
+
+```c++
+bool UBg2ModelComponent::LoadModelMesh(FString Path)
+{
+    // mBaseMaterial is loaded in the constructor
+	auto bg2Mesh = UBg2Model::Load(this, mBaseMaterial, Path, 100.0f);
+
+	if (bg2Mesh)
+	{
+		bg2Mesh->SetupAttachment(GetOwner()->GetRootComponent());
+		bg2Mesh->RegisterComponent();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+```
+
+**GetExternalResources**
+
+Returns an array with the paths to the files on which a 3D model depends, usually the texture images of its material.
+
+```c++
+static void GetExternalResources(
+    const FString & ModelPath,
+    TArray<FString> & Result
+)
+```
+
+- ModelPath: the model path in the file system.
+- Result: array with the directly dependent files of the model.
+
+### The `BaseMaterial` parameter
+
+This parameter is a special material that is supplied within the assets of the Bg2Tools plugin. It is a material that has parameterised the properties of the bg2 engine's native materials. It is necessary to pass it manually as a parameter because from the static loading methods you don't have a full access to the Unreal tools to load assets.
+
+You can use the constructor of an actor class to load the base material instance following this code snippet:
+
+```c++ 
+#include "UObject/ConstructorHelpers.h"
+...
+AMyActor::AMyActor()
+{
+
+    ConstructorHelpers::FObjectFinder<UMaterial> MaterialFinder(
+        TEXT("/Bg2UnrealTools/Materials/TestMaterial"));
+	if (MaterialFinder.Succeeded())
+	{
+		BaseMaterial = MaterialFinder.Object;
+	}
+	else
+	{
+        // This can happen if the base material asset is not
+        // found. If this happens is probably due to a bad 
+        // configuration of the plugin, or that the path you
+        // have used in FObjectFinder is wrong.
+		BaseMaterial = CreateDefaultSubobject<UMaterial>(
+            TEXT("InvalidBaseMaterial"));
+	}
+}
+```
+
+## Blueprint API
+
+The BP_Bg2SceneLoader blueprint inherits directly from the Bg2SceneLoader class and has access to the following functions:
+
+![blueprint api](doc/blueprint-api.jpg)
+
+For a quick test:
+- Add a BP_Bg2SceneLoader blueprint to the scene.
+- Open the level blueprint.
+- Drag the BP_Bg2SceneLoader instance to the level blueprint.
+- Add an action from the blueprint. You can use `bg2 engine` as filter string.
+
